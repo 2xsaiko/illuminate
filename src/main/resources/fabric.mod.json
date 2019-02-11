@@ -1,7 +1,7 @@
 {
   "id": "illuminate",
   "name": "Illuminate",
-  "description": "",
+  "description": "An API for Minecraft to allow for projecting images similar to real video projectors into the world.",
   "version": "1.0.0",
   "side": "universal",
   "dependencies": {

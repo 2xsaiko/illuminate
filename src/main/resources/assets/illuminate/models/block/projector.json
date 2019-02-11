@@ -1,0 +1,11 @@
+{
+  "parent": "illuminate:block/block_directional",
+  "textures": {
+    "particle": "illuminate:block/projector_top",
+    "top": "illuminate:block/projector_top",
+    "bottom": "illuminate:block/projector_bottom",
+    "front": "illuminate:block/projector_front",
+    "back": "illuminate:block/projector_back",
+    "side": "illuminate:block/projector_side"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "package": "therealfarfetchd.illuminate.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "test/MixinCreeperEntity",
+    "MixinClientPlayerEntity",
+    "MixinDebugHud",
+    "MixinGameRenderer",
+    "MixinGlStateManager",
+    "MixinMinecraftClient"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

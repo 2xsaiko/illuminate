@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "illuminate:block/projector" },
+    "facing=south": { "model": "illuminate:block/projector", "y": 180 },
+    "facing=west": { "model": "illuminate:block/projector", "y": 270 },
+    "facing=east": { "model": "illuminate:block/projector", "y": 90 }
+  }
+}

@@ -79,7 +79,7 @@ class PostProcess(private val mc: MinecraftClient) {
   private val uLightPos = IntArray(10)
   private var uLightCount = 0
 
-  private val offscreenFb = GlFramebuffer(width, height, true, MinecraftClient.isSystemMac)
+  private val offscreenFb = GlFramebuffer(width, height, true, MinecraftClient.IS_SYSTEM_MAC)
   private val lightDepthFb = LightFramebuffer(1024, 1024, false)
   private val blitFb = WGlFramebuffer.create()
 
@@ -147,7 +147,7 @@ class PostProcess(private val mc: MinecraftClient) {
    * Resize the framebuffers and textures to the specified size.
    */
   fun resize(width: Int, height: Int) {
-    offscreenFb.resize(width, height, MinecraftClient.isSystemMac)
+    offscreenFb.resize(width, height, MinecraftClient.IS_SYSTEM_MAC)
   }
 
   /**
@@ -200,12 +200,12 @@ class PostProcess(private val mc: MinecraftClient) {
     if (!shader.isValid) return // something is fucked
 
     val ce = mc.cameraEntity!!
-    val cameraPosVec = ce.getCameraPosVec(delta).subtract(0.0, ce.eyeHeight.toDouble(), 0.0)
+    val cameraPosVec = ce.getCameraPosVec(delta).subtract(0.0, ce.getEyeHeight(ce.pose).toDouble(), 0.0)
     translated(-cameraPosVec.x, -cameraPosVec.y, -cameraPosVec.z)
 
     blitDepthToTex(target, playerCamDepth)
 
-    clear(GL_DEPTH_BUFFER_BIT, MinecraftClient.isSystemMac)
+    clear(GL_DEPTH_BUFFER_BIT, MinecraftClient.IS_SYSTEM_MAC)
 
     paintSurfaces(target, offscreenFb)
     blit(offscreenFb, target)
@@ -249,7 +249,7 @@ class PostProcess(private val mc: MinecraftClient) {
 
     glViewport(0, 0, targetW, targetH)
 
-    into.clear(MinecraftClient.isSystemMac)
+    into.clear(MinecraftClient.IS_SYSTEM_MAC)
     into.beginWrite(false)
     depthMask(true)
     colorMask(true, true, true, true)

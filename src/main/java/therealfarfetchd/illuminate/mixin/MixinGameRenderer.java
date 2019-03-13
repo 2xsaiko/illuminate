@@ -24,7 +24,7 @@ public abstract class MixinGameRenderer implements GameRendererExt {
         pp = new PostProcess(mc);
     }
 
-    @Inject(method = "method_3169(II)V", at = @At("RETURN"))
+    @Inject(method = "onResized(II)V", at = @At("RETURN"))
     private void resize(int width, int height, CallbackInfo ci) {
         pp.resize(width, height);
     }

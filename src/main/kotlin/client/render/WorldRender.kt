@@ -2,8 +2,8 @@ package therealfarfetchd.illuminate.client.render
 
 import com.mojang.blaze3d.platform.GlStateManager
 import net.minecraft.block.BlockRenderLayer
-import net.minecraft.class_295
 import net.minecraft.client.MinecraftClient
+import net.minecraft.client.render.CameraHelper
 import net.minecraft.client.render.FrustumWithOrigin
 import net.minecraft.client.render.GameRenderer
 import net.minecraft.client.render.GlMatrixFrustum
@@ -21,11 +21,11 @@ fun renderWorld(gr: GameRenderer, delta: Float, time: Long, i: Int) {
   gr.client.profiler.swap("clearLights")
 //  GlStateManager.viewport(0, 0, gr.client.window.framebufferWidth, gr.client.window.framebufferHeight)
 //  gr.backgroundRenderer.renderBackground(delta)
-  GlStateManager.clear(16640, MinecraftClient.isSystemMac)
+  GlStateManager.clear(16640, MinecraftClient.IS_SYSTEM_MAC)
   gr.client.profiler.swap("camera")
 //  gr.method_3185(delta)
   val frustum_1 = GlMatrixFrustum.get()
-  class_295.method_1373(gr.client.player, gr.client.options.field_1850 == 2, gr.viewDistance, frustum_1)
+  CameraHelper.update(gr.client.player, gr.client.options.perspective == 2, gr.viewDistance, frustum_1)
   gr.client.profiler.swap("culling")
   val visibleRegion_1 = FrustumWithOrigin(frustum_1)
   val entity_1 = gr.client.getCameraEntity()!!
@@ -59,7 +59,7 @@ fun renderWorld(gr: GameRenderer, delta: Float, time: Long, i: Int) {
   GuiLighting.disable()
   gr.client.profiler.swap("terrain_setup")
 //  gr.client.world.getChunkProvider().getLightingProvider().doLightUpdates(Integer.MAX_VALUE, true, true)
-  worldRenderer_1.setUpTerrain(entity_1, delta, visibleRegion_1, i, gr.client.player.method_7325())
+  worldRenderer_1.setUpTerrain(entity_1, delta, visibleRegion_1, i, gr.client.player.isSpectator)
 //  gr.client.getProfiler().swap("updatechunks")
 //  gr.client.worldRenderer.updateChunks(time)
   gr.client.profiler.swap("terrain")

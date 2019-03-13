@@ -1,7 +1,8 @@
 package therealfarfetchd.illuminate.client.render
 
 import net.minecraft.entity.Entity
-import net.minecraft.entity.EntityCategory.field_17715
+import net.minecraft.entity.EntityCategory.MISC
+import net.minecraft.entity.EntitySize
 import net.minecraft.entity.EntityType
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.network.Packet
@@ -35,6 +36,6 @@ class LightSource(world: World, light: Light) : Entity(Type, world) {
   override fun updateLogic() {}
 
   companion object {
-    val Type = EntityType({ error("can't construct") }, field_17715, false, false, null, 0f, 0f)
+    val Type = EntityType<LightSource>({ _, _ -> error("can't construct") }, MISC, false, false, null, EntitySize.constant(0f, 0f))
   }
 }

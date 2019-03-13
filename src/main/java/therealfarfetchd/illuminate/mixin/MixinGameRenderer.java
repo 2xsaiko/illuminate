@@ -29,7 +29,7 @@ public abstract class MixinGameRenderer implements GameRendererExt {
         pp.resize(width, height);
     }
 
-    @Inject(method = "close()V", at = @At("RETURN"))
+    @Inject(method = "close()V", at = @At("RETURN"), remap = false)
     private void close(CallbackInfo ci) {
         pp.destroy();
     }

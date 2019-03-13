@@ -4,7 +4,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 val compileKotlin: KotlinCompile by tasks
 
 plugins {
-  kotlin("jvm") version "1.3.10"
+  kotlin("jvm") version "1.3.21"
   id("fabric-loom") version "0.2.0-SNAPSHOT"
 }
 

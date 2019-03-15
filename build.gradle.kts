@@ -35,6 +35,10 @@ compileKotlin.kotlinOptions {
 minecraft {
 }
 
+repositories {
+  maven(url = "https://maven.therealfarfetchd.dev/")
+}
+
 dependencies {
   minecraft("com.mojang:minecraft:19w09a")
   mappings("net.fabricmc:yarn:19w09a.10")
@@ -46,5 +50,5 @@ dependencies {
   compileOnly(kotlin("stdlib", "1.3.21"))
   compileOnly(kotlin("stdlib-jdk8", "1.3.21"))
 
-  compile(files("qcommon-croco-1.0.5-dev.jar"))
+  modCompile("therealfarfetchd.qcommon", "croco", "1.0.5-5")
 }

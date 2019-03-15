@@ -15,6 +15,8 @@ base {
 group = "therealfarfetchd.illuminate"
 version = "1.0.0"
 
+apply(from = "https://raw.githubusercontent.com/therealfarfetchd/gradle-tools/master/publish.gradle")
+
 java {
   sourceCompatibility = VERSION_1_8
   targetCompatibility = VERSION_1_8

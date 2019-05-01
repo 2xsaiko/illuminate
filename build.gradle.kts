@@ -40,13 +40,13 @@ repositories {
 }
 
 dependencies {
-  minecraft("com.mojang:minecraft:19w09a")
-  mappings("net.fabricmc:yarn:19w09a.10")
-  modCompile("net.fabricmc:fabric-loader:0.3.7.109")
+  minecraft("com.mojang:minecraft:1.14")
+  mappings("net.fabricmc:yarn:1.14+build.7")
+  modCompile("net.fabricmc:fabric-loader:0.4.6+build.141")
 
   // Fabric API. This is technically optional, but you probably want it anyway.
-  modCompile("net.fabricmc:fabric:0.2.3.109")
-  compile("net.fabricmc:fabric-language-kotlin:1.3.21-1")
+  modCompile("net.fabricmc:fabric:0.2.7+build.127")
+  compile("net.fabricmc:fabric-language-kotlin:1.3.30-SNAPSHOT")
   compileOnly(kotlin("stdlib", "1.3.21"))
   compileOnly(kotlin("stdlib-jdk8", "1.3.21"))
 

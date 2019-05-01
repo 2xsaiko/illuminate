@@ -24,7 +24,7 @@ public abstract class MixinMinecraftClient implements MinecraftClientExt {
         this.framebuffer = fb;
     }
 
-    @Inject(method = "method_1481(Lnet/minecraft/client/world/ClientWorld;)V", at = @At("HEAD"))
+    @Inject(method = "joinWorld(Lnet/minecraft/client/world/ClientWorld;)V", at = @At("HEAD"))
     private void method_1481(ClientWorld clientWorld_1, CallbackInfo ci) {
         Lights.getInstance().clear();
     }

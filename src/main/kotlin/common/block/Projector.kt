@@ -7,8 +7,8 @@ import net.minecraft.client.MinecraftClient
 import net.minecraft.item.ItemPlacementContext
 import net.minecraft.state.StateFactory.Builder
 import net.minecraft.state.property.Properties.FACING_HORIZONTAL
-import net.minecraft.util.Mirror
-import net.minecraft.util.Rotation
+import net.minecraft.util.BlockMirror
+import net.minecraft.util.BlockRotation
 import net.minecraft.util.math.BlockPos
 import net.minecraft.util.math.Direction
 import net.minecraft.world.World
@@ -17,20 +17,21 @@ import therealfarfetchd.illuminate.client.test.BlockLight
 
 class ProjectorBlock : Block(Block.Settings.of(Material.METAL)) {
 
-  override fun onBlockAdded(blockState_1: BlockState?, world_1: World?, blockPos_1: BlockPos, blockState_2: BlockState?) {
+  override fun onBlockAdded(blockState_1: BlockState?, world_1: World?, blockPos_1: BlockPos, blockState_2: BlockState?, boolean_1: Boolean) {
     MinecraftClient.getInstance().execute {
       Lights += BlockLight(blockPos_1)
     }
   }
 
+
   override fun getPlacementState(ctx: ItemPlacementContext): BlockState? {
     return this.defaultState.with(FACING_HORIZONTAL, ctx.playerHorizontalFacing.opposite)
   }
 
-  override fun rotate(state: BlockState, rotation: Rotation): BlockState =
+  override fun rotate(state: BlockState, rotation: BlockRotation): BlockState =
     state.with(FACING_HORIZONTAL, rotation.rotate(state.get<Direction>(FACING_HORIZONTAL) as Direction))
 
-  override fun mirror(state: BlockState, mirror: Mirror): BlockState =
+  override fun mirror(state: BlockState, mirror: BlockMirror): BlockState =
     state.rotate(mirror.getRotation(state.get<Direction>(FACING_HORIZONTAL) as Direction))
 
   override fun appendProperties(b: Builder<Block, BlockState>) {

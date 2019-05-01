@@ -26,7 +26,7 @@ class CreeperLight(val e: CreeperEntity) : Light {
   override fun prepare(delta: Float) {
     this.delta = delta
 
-    if (!e.isValid || e.world != MinecraftClient.getInstance().world) {
+    if (e.removed || e.world != MinecraftClient.getInstance().world) {
       Lights -= this
     }
   }

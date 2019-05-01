@@ -177,7 +177,7 @@ class PostProcess(private val mc: MinecraftClient) {
       val lightSource = LightSource(mc.world, lc.light)
       mc.cameraEntity = lightSource
       disableCull()
-      mc.gameRenderer.renderWorld(delta, nanoTime)
+      renderWorld(mc.gameRenderer, delta, nanoTime, i)
       blitDepthToTex(lightDepthFb, lc.depth)
 
       glMatrixMode(GL11.GL_PROJECTION)

@@ -17,7 +17,7 @@ public abstract class MixinCreeperEntity {
 
     private boolean spawnedLight = false;
 
-    @Inject(method = "update()V", at = @At("RETURN"))
+    @Inject(method = "tick()V", at = @At("RETURN"))
     private void update(CallbackInfo ci) {
         if (!spawnedLight) {
             if (self.world.isClient)

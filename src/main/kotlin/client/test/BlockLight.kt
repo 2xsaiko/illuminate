@@ -19,7 +19,7 @@ class BlockLight(val bp: BlockPos) : Light {
 
   override val pos: Vec3 = Vec3(bp.x + 0.5f, bp.y + 0.5f, bp.z + 0.5f)
 
-  override var yaw: Float = 0f
+  override var yaw: Float = 80f
 
   override val fov: Float = 35f
 

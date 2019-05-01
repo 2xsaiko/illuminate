@@ -19,6 +19,7 @@ import net.minecraft.client.MinecraftClient
 import net.minecraft.client.gl.GlFramebuffer
 import net.minecraft.client.render.Tessellator
 import net.minecraft.client.render.VertexFormats
+import net.minecraft.entity.EntityPose
 import net.minecraft.util.Identifier
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
@@ -176,7 +177,7 @@ class PostProcess(private val mc: MinecraftClient) {
       val lightSource = LightSource(mc.world, lc.light)
       mc.cameraEntity = lightSource
       disableCull()
-      renderWorld(mc.gameRenderer, delta, nanoTime, i)
+      mc.gameRenderer.renderWorld(delta, nanoTime)
       blitDepthToTex(lightDepthFb, lc.depth)
 
       glMatrixMode(GL11.GL_PROJECTION)
@@ -200,7 +201,8 @@ class PostProcess(private val mc: MinecraftClient) {
     if (!shader.isValid) return // something is fucked
 
     val ce = mc.cameraEntity!!
-    val cameraPosVec = ce.getCameraPosVec(delta).subtract(0.0, ce.getEyeHeight(ce.pose).toDouble(), 0.0)
+    val camera = mc.gameRenderer.camera
+    val cameraPosVec = camera.pos.subtract(0.0, ce.getEyeHeight(EntityPose.STANDING).toDouble(), 0.0)
     translated(-cameraPosVec.x, -cameraPosVec.y, -cameraPosVec.z)
 
     blitDepthToTex(target, playerCamDepth)

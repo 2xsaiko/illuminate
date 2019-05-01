@@ -1,4 +1,5 @@
 {
+  "schemaVersion": 1,
   "id": "illuminate",
   "name": "Illuminate",
   "description": "An API for Minecraft to allow for projecting images similar to real video projectors into the world.",
@@ -10,9 +11,11 @@
       "qcommon-croco": ">=1.0.5"
     }
   },
-  "initializers": ["therealfarfetchd.illuminate.Illuminate", "therealfarfetchd.illuminate.client.IlluminateClient"],
-  "languageAdapter": "net.fabricmc.language.kotlin.KotlinLanguageAdapter",
-  "mixins": {
-    "client": "illuminate-mixins-client.json"
-  }
+  "entrypoints":{
+    "main": [{"adapter":  "kotlin", "value":  "therealfarfetchd.illuminate.Illuminate"}],
+    "client": [{"adapter":  "kotlin", "value":  "therealfarfetchd.illuminate.client.IlluminateClient"}]
+  },
+  "mixins": [
+    "illuminate-mixins-client.json"
+  ]
 }

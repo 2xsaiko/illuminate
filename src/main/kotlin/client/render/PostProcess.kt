@@ -19,7 +19,6 @@ import net.minecraft.client.MinecraftClient
 import net.minecraft.client.gl.GlFramebuffer
 import net.minecraft.client.render.Tessellator
 import net.minecraft.client.render.VertexFormats
-import net.minecraft.entity.EntityPose
 import net.minecraft.util.Identifier
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
@@ -33,6 +32,7 @@ import org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_S
 import org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_T
 import org.lwjgl.opengl.GL11.glClear
 import org.lwjgl.opengl.GL11.glDrawBuffer
+import org.lwjgl.opengl.GL11.glGetFloatv
 import org.lwjgl.opengl.GL11.glMatrixMode
 import org.lwjgl.opengl.GL11.glViewport
 import org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE
@@ -54,6 +54,8 @@ import therealfarfetchd.illuminate.client.glwrap.WGlTexture2D
 import therealfarfetchd.illuminate.client.setFramebuffer
 import therealfarfetchd.illuminate.common.util.ext.minus
 import therealfarfetchd.illuminate.common.util.ext.ortho
+import therealfarfetchd.illuminate.common.util.ext.times
+import therealfarfetchd.qcommon.croco.Mat4
 import therealfarfetchd.qcommon.croco.Vec3
 import java.io.IOException
 
@@ -70,6 +72,7 @@ class PostProcess(private val mc: MinecraftClient) {
   private val shader: WGlShader
 
   private var uMvp = 0
+  private var uCamInv = 0
   private var uWidth = 0
   private var uHeight = 0
   private var uWorld = 0
@@ -110,6 +113,7 @@ class PostProcess(private val mc: MinecraftClient) {
       shader.enable()
 
       uMvp = shader.getUniformLocation("mvp")
+      uCamInv = shader.getUniformLocation("camInv")
       uWidth = shader.getUniformLocation("width")
       uHeight = shader.getUniformLocation("height")
       uWorld = shader.getUniformLocation("world")
@@ -202,7 +206,7 @@ class PostProcess(private val mc: MinecraftClient) {
 
     val ce = mc.cameraEntity!!
     val camera = mc.gameRenderer.camera
-    val cameraPosVec = camera.pos.subtract(0.0, ce.getEyeHeight(EntityPose.STANDING).toDouble(), 0.0)
+    val cameraPosVec = camera.pos
     translated(-cameraPosVec.x, -cameraPosVec.y, -cameraPosVec.z)
 
     blitDepthToTex(target, playerCamDepth)
@@ -248,6 +252,17 @@ class PostProcess(private val mc: MinecraftClient) {
     ortho(0f, targetW.toFloat(), targetH.toFloat(), 0f, -1f, 1f).intoBuffer(matBuf)
     matBuf.rewind()
     glUniformMatrix4fv(uMvp, false, matBuf)
+
+    matBuf.clear()
+    glGetFloatv(GL11.GL_MODELVIEW_MATRIX, matBuf)
+    val mv = Mat4.fromBuffer(matBuf)
+    matBuf.clear()
+    glGetFloatv(GL11.GL_PROJECTION_MATRIX, matBuf)
+    val p = Mat4.fromBuffer(matBuf)
+    matBuf.clear()
+    (p * mv).invert().intoBuffer(matBuf)
+    matBuf.rewind()
+    glUniformMatrix4fv(uCamInv, false, matBuf)
 
     glViewport(0, 0, targetW, targetH)
 

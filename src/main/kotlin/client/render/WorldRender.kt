@@ -2,27 +2,26 @@ package therealfarfetchd.illuminate.client.render
 
 import com.mojang.blaze3d.platform.GlStateManager
 import net.minecraft.block.BlockRenderLayer
-import net.minecraft.client.MinecraftClient
+import net.minecraft.client.render.Camera
 import net.minecraft.client.render.FrustumWithOrigin
 import net.minecraft.client.render.GameRenderer
 import net.minecraft.client.render.GlMatrixFrustum
 import net.minecraft.client.render.GuiLighting
 import net.minecraft.client.render.Tessellator
 import net.minecraft.client.texture.SpriteAtlasTexture
-import net.minecraft.client.util.math.Matrix4f
-import net.minecraft.entity.Entity
-import net.minecraft.util.math.MathHelper
 
 // TODO: turn into Mixin of Lnet/minecraft/client/render/GameRenderer;renderCenter(FJ)V instead of copying the method
 fun renderWorld(gr: GameRenderer, delta: Float, time: Long, i: Int) {
   val worldRenderer_1 = gr.client.worldRenderer
   val particleManager_1 = gr.client.particleManager
-  val boolean_1 = false;
+  val boolean_1 = false
 //  GlStateManager.enableCull()
   gr.client.getProfiler().swap("camera")
 //  gr.applyCameraTransformations(delta)
-  val camera_1 = gr.camera
-  camera_1.update(gr.client.world, (if (gr.client.getCameraEntity() == null) gr.client.player else gr.client.getCameraEntity()) as Entity, gr.client.options.perspective > 0, gr.client.options.perspective == 2, delta)
+  val camera_1 = Camera() // gr.camera
+  GlStateManager.pushMatrix()
+  camera_1.update(gr.client.world, (if (gr.client.getCameraEntity() == null) gr.client.player else gr.client.getCameraEntity()), false, false, delta)
+  GlStateManager.popMatrix()
   val frustum_1 = GlMatrixFrustum.get()
   gr.client.getProfiler().swap("clear")
 //  GlStateManager.viewport(0, 0, gr.client.window.getFramebufferWidth(), gr.client.window.getFramebufferHeight())

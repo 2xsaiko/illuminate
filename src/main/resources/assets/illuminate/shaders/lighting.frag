@@ -1,4 +1,4 @@
-#version 130
+#version 120
 
 #define NUM_LIGHTS 10
 
@@ -21,10 +21,10 @@ uniform mat4 screen2tex = mat4(
     0.5, 0.5, 0.5, 1
 );
 
-in vec2 _uv;
-in vec2 _xy;
+uniform mat4 camInv;
 
-flat in mat4 camInv;
+varying vec2 _uv;
+varying vec2 _xy;
 
 bool isInBox(in vec3 v) {
     return
@@ -41,7 +41,7 @@ vec3 toWorldCoords(in vec2 screen, in float depth) {
 }
 
 vec3 toWorldCoords(in vec2 screen, in vec2 depthCoords) {
-    float d = texture(depth, depthCoords).x * 2 - 1;
+    float d = texture2D(depth, depthCoords).x * 2 - 1;
     return toWorldCoords(screen, d);
 }
 
@@ -55,11 +55,11 @@ vec3 getNormal(in vec2 screen, in vec2 depthCoords) {
 }
 
 void main() {
-    float depthR = texture(depth, _uv).x;
+    float depthR = texture2D(depth, _uv).x;
     float depth = depthR * 2 - 1;
     vec3 worldCoords = toWorldCoords(_xy, depth);
 
-    vec3 rgb = texture(world, _uv).xyz;
+    vec3 rgb = texture2D(world, _uv).xyz;
 
     vec3 combinedLightColor = vec3(0);
 
@@ -73,9 +73,9 @@ void main() {
         vec4 tex = screen2tex * v;
         vec3 lightCamCoords = v.xyz / v.w;
         vec2 texCoords = tex.xy / tex.w;
-        float ld = texture(lightDepth[i], texCoords).x * 2 - 1;
+        float ld = texture2D(lightDepth[i], texCoords).x * 2 - 1;
         if (isInBox(lightCamCoords) && lightCamCoords.z <= ld + 0.001) {
-            vec4 texColor = texture(lightTex[i], texCoords * vec2(1, -1));
+            vec4 texColor = texture2D(lightTex[i], texCoords * vec2(1, -1));
             combinedLightColor += vec3(texColor.xyz * texColor.w * lmul * inversesqrt(dist));
         }
     }

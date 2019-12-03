@@ -1,22 +1,19 @@
 package therealfarfetchd.illuminate.common.init
 
+import net.fabricmc.fabric.api.client.itemgroup.FabricItemGroupBuilder
 import net.minecraft.block.Block
-import net.minecraft.block.entity.BlockEntity
-import net.minecraft.block.entity.BlockEntityType
 import net.minecraft.item.BlockItem
 import net.minecraft.item.Item
-import net.minecraft.item.ItemGroup
 import net.minecraft.util.Identifier
 import net.minecraft.util.registry.Registry
 import therealfarfetchd.illuminate.ModID
 import therealfarfetchd.illuminate.common.block.ProjectorBlock
+import therealfarfetchd.illuminate.common.util.ext.makeStack
 
-object BlockEntityTypes {
-
-  private fun <T : BlockEntity> create(builder: () -> T, name: String): BlockEntityType<T> {
-    return Registry.register(Registry.BLOCK_ENTITY, Identifier(ModID, name), BlockEntityType.Builder.create(builder).build(null))
-  }
-
+object ItemGroups {
+  val all = FabricItemGroupBuilder.create(Identifier(ModID, "all"))
+    .icon { Items.Projector.makeStack() }
+    .build()
 }
 
 object Blocks {
@@ -34,7 +31,7 @@ object Items {
   val Projector = create(Blocks.Projector, "projector")
 
   private fun <T : Block> create(block: T, name: String): BlockItem {
-    return create(BlockItem(block, Item.Settings().itemGroup(ItemGroup.REDSTONE)), name)
+    return create(BlockItem(block, Item.Settings().group(ItemGroups.all)), name)
   }
 
   private fun <T : Item> create(item: T, name: String): T {

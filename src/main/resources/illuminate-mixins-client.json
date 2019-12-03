@@ -8,7 +8,8 @@
     "MixinDebugHud",
     "MixinGameRenderer",
     "MixinGlStateManager",
-    "MixinMinecraftClient"
+    "MixinMinecraftClient",
+    "MixinMatrix4f"
   ],
   "injectors": {
     "defaultRequire": 1

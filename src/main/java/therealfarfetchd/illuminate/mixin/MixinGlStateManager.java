@@ -15,7 +15,7 @@ public abstract class MixinGlStateManager {
         method = "<clinit>()V",
         at = @At(value = "INVOKE", target = "Ljava/util/stream/IntStream;range(II)Ljava/util/stream/IntStream;"),
         slice = @Slice(
-            from = @At(value = "FIELD", target = "Lcom/mojang/blaze3d/platform/GlStateManager;NORMALIZE:Lcom/mojang/blaze3d/platform/GlStateManager$CapabilityTracker;"),
+            from = @At(value = "FIELD", target = "Lcom/mojang/blaze3d/platform/GlStateManager;activeTexture:I"),
             to = @At(value = "FIELD", target = "Lcom/mojang/blaze3d/platform/GlStateManager;shadeModel:I")
         ),
         index = 1,

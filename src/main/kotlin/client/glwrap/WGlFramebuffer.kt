@@ -1,11 +1,11 @@
 package therealfarfetchd.illuminate.client.glwrap
 
-import com.mojang.blaze3d.platform.GLX.glBindFramebuffer
-import com.mojang.blaze3d.platform.GLX.glDeleteFramebuffers
-import com.mojang.blaze3d.platform.GLX.glFramebufferTexture2D
-import com.mojang.blaze3d.platform.GLX.glGenFramebuffers
 import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
 import org.lwjgl.opengl.GL30.GL_FRAMEBUFFER
+import org.lwjgl.opengl.GL30.glBindFramebuffer
+import org.lwjgl.opengl.GL30.glDeleteFramebuffers
+import org.lwjgl.opengl.GL30.glFramebufferTexture2D
+import org.lwjgl.opengl.GL30.glGenFramebuffers
 
 inline class WGlFramebuffer(val id: Int) {
 

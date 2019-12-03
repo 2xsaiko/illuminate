@@ -1,14 +1,14 @@
 package therealfarfetchd.illuminate.client
 
 import net.minecraft.client.MinecraftClient
-import net.minecraft.client.gl.GlFramebuffer
+import net.minecraft.client.gl.Framebuffer
 
 interface MinecraftClientExt {
 
-  fun setFramebuffer(fb: GlFramebuffer)
+  fun setFramebuffer(fb: Framebuffer)
 
 }
 
-fun MinecraftClient.setFramebuffer(fb: GlFramebuffer) {
+fun MinecraftClient.setFramebuffer(fb: Framebuffer) {
   (this as MinecraftClientExt).setFramebuffer(fb)
 }

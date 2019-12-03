@@ -1,8 +1,9 @@
 package therealfarfetchd.illuminate.client.glwrap
 
-import com.mojang.blaze3d.platform.GLX.glDeleteProgram
-import com.mojang.blaze3d.platform.GLX.glGetUniformLocation
-import com.mojang.blaze3d.platform.GLX.glUseProgram
+import org.lwjgl.opengl.GL20.glDeleteProgram
+import org.lwjgl.opengl.GL20.glGetUniformLocation
+import org.lwjgl.opengl.GL20.glUseProgram
+
 
 inline class WGlShader(val id: Int) {
 

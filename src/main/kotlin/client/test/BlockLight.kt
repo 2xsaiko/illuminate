@@ -30,7 +30,7 @@ class BlockLight(val bp: BlockPos) : Light {
   private var wait = true
 
   override fun prepare(delta: Float) {
-    val state = MinecraftClient.getInstance().world.getBlockState(bp)
+    val state = MinecraftClient.getInstance().world!!.getBlockState(bp)
 
     if (state.block != Blocks.Projector) {
       if (!wait) Lights -= this
@@ -39,7 +39,7 @@ class BlockLight(val bp: BlockPos) : Light {
       wait = false
     }
 
-    yaw = -state.get(Properties.FACING_HORIZONTAL).asRotation()
+    yaw = -state.get(Properties.HORIZONTAL_FACING).asRotation()
   }
 
   companion object {
@@ -49,7 +49,7 @@ class BlockLight(val bp: BlockPos) : Light {
       tm.bindTexture(identifier)
       bindTexture(0)
 
-      return WGlTexture2D(tm.getTexture(identifier).glId)
+      return WGlTexture2D(tm.getTexture(identifier)!!.glId)
     }
   }
 

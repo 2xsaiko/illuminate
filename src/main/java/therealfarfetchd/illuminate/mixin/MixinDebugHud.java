@@ -12,8 +12,8 @@ import therealfarfetchd.illuminate.client.render.RenderUtilsKt;
 @Mixin(DebugHud.class)
 public abstract class MixinDebugHud {
 
-    @Inject(method = "draw()V", at = @At("RETURN"))
-    private void draw(CallbackInfo ci) {
+    @Inject(method = "render()V", at = @At("RETURN"))
+    private void render(CallbackInfo ci) {
         RenderUtilsKt.drawDebug();
     }
 

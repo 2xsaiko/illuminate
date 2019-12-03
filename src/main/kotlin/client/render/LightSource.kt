@@ -1,9 +1,8 @@
 package therealfarfetchd.illuminate.client.render
 
-import net.fabricmc.fabric.api.entity.FabricEntityTypeBuilder
 import net.minecraft.entity.Entity
 import net.minecraft.entity.EntityCategory.MISC
-import net.minecraft.entity.EntitySize
+import net.minecraft.entity.EntityDimensions
 import net.minecraft.entity.EntityType
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.network.Packet
@@ -35,6 +34,6 @@ class LightSource(world: World, light: Light) : Entity(Type, world) {
   override fun createSpawnPacket(): Packet<*>? = null
 
   companion object {
-    val Type = EntityType<LightSource>({ _, _ -> error("can't construct") }, MISC, false, false, false, null, EntitySize.constant(0f, 0f))
+    val Type = EntityType<LightSource>({ _, _ -> error("can't construct") }, MISC, false, false, false, false, EntityDimensions.fixed(0f, 0f))
   }
 }

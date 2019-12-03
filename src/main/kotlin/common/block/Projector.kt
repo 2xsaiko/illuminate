@@ -5,37 +5,35 @@ import net.minecraft.block.BlockState
 import net.minecraft.block.Material
 import net.minecraft.client.MinecraftClient
 import net.minecraft.item.ItemPlacementContext
-import net.minecraft.state.StateFactory.Builder
-import net.minecraft.state.property.Properties.FACING_HORIZONTAL
+import net.minecraft.state.StateManager
+import net.minecraft.state.property.Properties.HORIZONTAL_FACING
 import net.minecraft.util.BlockMirror
 import net.minecraft.util.BlockRotation
 import net.minecraft.util.math.BlockPos
-import net.minecraft.util.math.Direction
 import net.minecraft.world.World
 import therealfarfetchd.illuminate.client.api.Lights
 import therealfarfetchd.illuminate.client.test.BlockLight
 
 class ProjectorBlock : Block(Block.Settings.of(Material.METAL)) {
 
-  override fun onBlockAdded(blockState_1: BlockState?, world_1: World?, blockPos_1: BlockPos, blockState_2: BlockState?, boolean_1: Boolean) {
+  override fun onBlockAdded(state: BlockState?, world: World?, pos: BlockPos, oldState: BlockState?, moved: Boolean) {
     MinecraftClient.getInstance().execute {
-      Lights += BlockLight(blockPos_1)
+      Lights += BlockLight(pos)
     }
   }
 
-
   override fun getPlacementState(ctx: ItemPlacementContext): BlockState? {
-    return this.defaultState.with(FACING_HORIZONTAL, ctx.playerHorizontalFacing.opposite)
+    return this.defaultState.with(HORIZONTAL_FACING, ctx.playerLookDirection.opposite)
   }
 
   override fun rotate(state: BlockState, rotation: BlockRotation): BlockState =
-    state.with(FACING_HORIZONTAL, rotation.rotate(state.get<Direction>(FACING_HORIZONTAL) as Direction))
+    state.with(HORIZONTAL_FACING, rotation.rotate(state.get(HORIZONTAL_FACING)))
 
   override fun mirror(state: BlockState, mirror: BlockMirror): BlockState =
-    state.rotate(mirror.getRotation(state.get<Direction>(FACING_HORIZONTAL) as Direction))
+    state.rotate(mirror.getRotation(state.get(HORIZONTAL_FACING)))
 
-  override fun appendProperties(b: Builder<Block, BlockState>) {
-    b.with(FACING_HORIZONTAL)
+  override fun appendProperties(b: StateManager.Builder<Block, BlockState>) {
+    b.add(HORIZONTAL_FACING)
   }
 
 }

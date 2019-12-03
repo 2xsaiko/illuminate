@@ -1,22 +1,18 @@
 package therealfarfetchd.illuminate.client.render
 
-import com.mojang.blaze3d.platform.GLX.GL_TEXTURE0
-import com.mojang.blaze3d.platform.GLX.GL_TEXTURE2
-import com.mojang.blaze3d.platform.GLX.glBindFramebuffer
-import com.mojang.blaze3d.platform.GlStateManager
-import com.mojang.blaze3d.platform.GlStateManager.activeTexture
-import com.mojang.blaze3d.platform.GlStateManager.bindTexture
-import com.mojang.blaze3d.platform.GlStateManager.clear
-import com.mojang.blaze3d.platform.GlStateManager.colorMask
-import com.mojang.blaze3d.platform.GlStateManager.depthMask
-import com.mojang.blaze3d.platform.GlStateManager.disableCull
-import com.mojang.blaze3d.platform.GlStateManager.disableTexture
-import com.mojang.blaze3d.platform.GlStateManager.enableTexture
-import com.mojang.blaze3d.platform.GlStateManager.popMatrix
-import com.mojang.blaze3d.platform.GlStateManager.pushMatrix
-import com.mojang.blaze3d.platform.GlStateManager.translated
+import com.mojang.blaze3d.systems.RenderSystem
+import com.mojang.blaze3d.systems.RenderSystem.activeTexture
+import com.mojang.blaze3d.systems.RenderSystem.bindTexture
+import com.mojang.blaze3d.systems.RenderSystem.clear
+import com.mojang.blaze3d.systems.RenderSystem.colorMask
+import com.mojang.blaze3d.systems.RenderSystem.depthMask
+import com.mojang.blaze3d.systems.RenderSystem.disableCull
+import com.mojang.blaze3d.systems.RenderSystem.disableTexture
+import com.mojang.blaze3d.systems.RenderSystem.enableTexture
+import com.mojang.blaze3d.systems.RenderSystem.popMatrix
+import com.mojang.blaze3d.systems.RenderSystem.pushMatrix
 import net.minecraft.client.MinecraftClient
-import net.minecraft.client.gl.GlFramebuffer
+import net.minecraft.client.gl.Framebuffer
 import net.minecraft.client.render.Tessellator
 import net.minecraft.client.render.VertexFormats
 import net.minecraft.util.Identifier
@@ -36,6 +32,8 @@ import org.lwjgl.opengl.GL11.glGetFloatv
 import org.lwjgl.opengl.GL11.glMatrixMode
 import org.lwjgl.opengl.GL11.glViewport
 import org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE
+import org.lwjgl.opengl.GL13.GL_TEXTURE0
+import org.lwjgl.opengl.GL13.GL_TEXTURE2
 import org.lwjgl.opengl.GL13.GL_TEXTURE3
 import org.lwjgl.opengl.GL13.GL_TEXTURE4
 import org.lwjgl.opengl.GL14
@@ -45,6 +43,7 @@ import org.lwjgl.opengl.GL20.glUniformMatrix4fv
 import org.lwjgl.opengl.GL30.GL_DEPTH_ATTACHMENT
 import org.lwjgl.opengl.GL30.GL_DRAW_FRAMEBUFFER
 import org.lwjgl.opengl.GL30.GL_READ_FRAMEBUFFER
+import org.lwjgl.opengl.GL30.glBindFramebuffer
 import org.lwjgl.opengl.GL30.glBlitFramebuffer
 import therealfarfetchd.illuminate.ModID
 import therealfarfetchd.illuminate.client.api.Light
@@ -66,8 +65,8 @@ class PostProcess(private val mc: MinecraftClient) {
 
   private val target = mc.framebuffer
 
-  private val width = target.viewWidth
-  private val height = target.viewHeight
+  private val width = target.viewportWidth
+  private val height = target.viewportHeight
 
   private val shader: WGlShader
 
@@ -83,7 +82,7 @@ class PostProcess(private val mc: MinecraftClient) {
   private val uLightPos = IntArray(10)
   private var uLightCount = 0
 
-  private val offscreenFb = GlFramebuffer(width, height, true, MinecraftClient.IS_SYSTEM_MAC)
+  private val offscreenFb = Framebuffer(width, height, true, MinecraftClient.IS_SYSTEM_MAC)
   private val lightDepthFb = LightFramebuffer(1024, 1024, false)
   private val blitFb = WGlFramebuffer.create()
 
@@ -143,7 +142,7 @@ class PostProcess(private val mc: MinecraftClient) {
     activeLights =
       if (lights.size < 10) lights.values.toSet()
       else {
-        val camPos = Vec3.from((mc.cameraEntity ?: mc.player).getCameraPosVec(delta))
+        val camPos = Vec3.from(mc.gameRenderer.camera.pos)
         lights.values.asSequence().sortedBy { (it.light.pos - camPos).lengthSq }.take(10).toSet()
       }
   }
@@ -178,10 +177,10 @@ class PostProcess(private val mc: MinecraftClient) {
       lc.light.prepare(delta)
 
       setupCamera(lc)
-      val lightSource = LightSource(mc.world, lc.light)
+      val lightSource = LightSource(mc.world!!, lc.light)
       mc.cameraEntity = lightSource
       disableCull()
-      renderWorld(mc.gameRenderer, delta, nanoTime, i)
+      renderWorld(mc.gameRenderer, delta, nanoTime, lc.light, i)
       blitDepthToTex(lightDepthFb, lc.depth)
 
       glMatrixMode(GL11.GL_PROJECTION)
@@ -207,7 +206,7 @@ class PostProcess(private val mc: MinecraftClient) {
     val ce = mc.cameraEntity!!
     val camera = mc.gameRenderer.camera
     val cameraPosVec = camera.pos
-    translated(-cameraPosVec.x, -cameraPosVec.y, -cameraPosVec.z)
+    RenderSystem.translated(-cameraPosVec.x, -cameraPosVec.y, -cameraPosVec.z)
 
     blitDepthToTex(target, playerCamDepth)
 
@@ -222,11 +221,11 @@ class PostProcess(private val mc: MinecraftClient) {
   /**
    * Apply the shader onto the source framebuffer and draw into the target framebuffer
    */
-  private fun paintSurfaces(from: GlFramebuffer, into: GlFramebuffer) {
-    val sourceW = from.texWidth
-    val sourceH = from.texHeight
-    val targetH = into.texHeight
-    val targetW = into.texWidth
+  private fun paintSurfaces(from: Framebuffer, into: Framebuffer) {
+    val sourceW = from.textureWidth
+    val sourceH = from.textureHeight
+    val targetH = into.textureHeight
+    val targetW = into.textureWidth
 
     from.endWrite()
 
@@ -272,7 +271,7 @@ class PostProcess(private val mc: MinecraftClient) {
     colorMask(true, true, true, true)
 
     val t = Tessellator.getInstance()
-    val buf = t.bufferBuilder
+    val buf = t.buffer
     buf.begin(GL_QUADS, VertexFormats.POSITION)
     buf.vertex(0.0, 0.0, 0.0).next()
     buf.vertex(0.0, targetH.toDouble(), 0.0).next()
@@ -317,30 +316,30 @@ class PostProcess(private val mc: MinecraftClient) {
    * Sets up GL's modelview and projection matrices according to the information from the passed [Light]
    */
   private fun setupCamera(light: LightContainer) {
-    val matBuf = matBuf
-
-    matBuf.clear()
-    light.p.intoBuffer(matBuf)
-    matBuf.rewind()
-    GlStateManager.matrixMode(GL11.GL_PROJECTION)
-    GlStateManager.loadIdentity()
-    GlStateManager.multMatrix(matBuf)
-
-    matBuf.clear()
-    light.mv.intoBuffer(matBuf)
-    matBuf.rewind()
-    GlStateManager.matrixMode(GL11.GL_MODELVIEW)
-    GlStateManager.loadIdentity()
-    GlStateManager.multMatrix(matBuf)
+    //    val matBuf = matBuf
+    //
+    //    matBuf.clear()
+    //    light.p.intoBuffer(matBuf)
+    //    matBuf.rewind()
+    //    matrixMode(GL11.GL_PROJECTION)
+    //    loadIdentity()
+    //    multMatrix(matBuf)
+    //
+    //    matBuf.clear()
+    //    light.mv.intoBuffer(matBuf)
+    //    matBuf.rewind()
+    //    matrixMode(GL11.GL_MODELVIEW)
+    //    loadIdentity()
+    //    multMatrix(matBuf)
   }
 
   /**
    * Copies the contents of a [GlFramebuffer] into another [GlFramebuffer].
    */
-  private fun blit(from: GlFramebuffer, into: GlFramebuffer) {
+  private fun blit(from: Framebuffer, into: Framebuffer) {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, from.fbo)
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, into.fbo)
-    glBlitFramebuffer(0, 0, from.texWidth, from.texHeight, 0, into.texHeight, into.texWidth, 0, GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT, GL_NEAREST)
+    glBlitFramebuffer(0, 0, from.textureWidth, from.textureHeight, 0, into.textureHeight, into.textureWidth, 0, GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT, GL_NEAREST)
     glBindFramebuffer(GL_READ_FRAMEBUFFER, 0)
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)
   }
@@ -349,15 +348,15 @@ class PostProcess(private val mc: MinecraftClient) {
    * Copies depth buffer from a [GlFramebuffer] into a [WGlTexture2D].
    * Needed because MC stores depth information in a renderbuffer which can't be directly accessed.
    */
-  private fun blitDepthToTex(from: GlFramebuffer, into: WGlTexture2D) {
-    into.texImage(GL14.GL_DEPTH_COMPONENT24, from.texWidth, from.texHeight, GL11.GL_DEPTH_COMPONENT, GL11.GL_FLOAT, 0)
+  private fun blitDepthToTex(from: Framebuffer, into: WGlTexture2D) {
+    into.texImage(GL14.GL_DEPTH_COMPONENT24, from.textureWidth, from.textureHeight, GL11.GL_DEPTH_COMPONENT, GL11.GL_FLOAT, 0)
     blitFb.bind(GL_DRAW_FRAMEBUFFER)
     into.bind()
     blitFb.attachTexture(GL_DEPTH_ATTACHMENT, into, target = GL_DRAW_FRAMEBUFFER)
 
     glBindFramebuffer(GL_READ_FRAMEBUFFER, from.fbo)
 
-    glBlitFramebuffer(0, 0, from.texWidth, from.texHeight, 0, 0, from.texWidth, from.texHeight, GL_DEPTH_BUFFER_BIT, GL_NEAREST)
+    glBlitFramebuffer(0, 0, from.textureWidth, from.textureHeight, 0, 0, from.textureWidth, from.textureHeight, GL_DEPTH_BUFFER_BIT, GL_NEAREST)
 
     glBindFramebuffer(GL_READ_FRAMEBUFFER, 0)
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)

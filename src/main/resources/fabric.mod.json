@@ -11,9 +11,9 @@
       "qcommon-croco": ">=1.0.5"
     }
   },
-  "entrypoints":{
-    "main": [{"adapter":  "kotlin", "value":  "therealfarfetchd.illuminate.Illuminate"}],
-    "client": [{"adapter":  "kotlin", "value":  "therealfarfetchd.illuminate.client.IlluminateClient"}]
+  "entrypoints": {
+    "main": [{ "adapter": "kotlin", "value": "therealfarfetchd.illuminate.Illuminate" }],
+    "client": [{ "adapter": "kotlin", "value": "therealfarfetchd.illuminate.client.IlluminateClient" }]
   },
   "mixins": [
     "illuminate-mixins-client.json"

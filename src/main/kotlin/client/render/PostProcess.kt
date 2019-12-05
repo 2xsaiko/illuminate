@@ -1,6 +1,5 @@
 package therealfarfetchd.illuminate.client.render
 
-import com.mojang.blaze3d.systems.RenderSystem
 import com.mojang.blaze3d.systems.RenderSystem.activeTexture
 import com.mojang.blaze3d.systems.RenderSystem.bindTexture
 import com.mojang.blaze3d.systems.RenderSystem.clear
@@ -9,12 +8,15 @@ import com.mojang.blaze3d.systems.RenderSystem.depthMask
 import com.mojang.blaze3d.systems.RenderSystem.disableCull
 import com.mojang.blaze3d.systems.RenderSystem.disableTexture
 import com.mojang.blaze3d.systems.RenderSystem.enableTexture
+import com.mojang.blaze3d.systems.RenderSystem.loadIdentity
 import com.mojang.blaze3d.systems.RenderSystem.popMatrix
 import com.mojang.blaze3d.systems.RenderSystem.pushMatrix
 import net.minecraft.client.MinecraftClient
 import net.minecraft.client.gl.Framebuffer
 import net.minecraft.client.render.Tessellator
 import net.minecraft.client.render.VertexFormats
+import net.minecraft.client.util.math.Matrix4f
+import net.minecraft.client.util.math.MatrixStack
 import net.minecraft.util.Identifier
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
@@ -28,7 +30,6 @@ import org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_S
 import org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_T
 import org.lwjgl.opengl.GL11.glClear
 import org.lwjgl.opengl.GL11.glDrawBuffer
-import org.lwjgl.opengl.GL11.glGetFloatv
 import org.lwjgl.opengl.GL11.glMatrixMode
 import org.lwjgl.opengl.GL11.glViewport
 import org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE
@@ -46,6 +47,7 @@ import org.lwjgl.opengl.GL30.GL_READ_FRAMEBUFFER
 import org.lwjgl.opengl.GL30.glBindFramebuffer
 import org.lwjgl.opengl.GL30.glBlitFramebuffer
 import therealfarfetchd.illuminate.ModID
+import therealfarfetchd.illuminate.client.activeRenderLight
 import therealfarfetchd.illuminate.client.api.Light
 import therealfarfetchd.illuminate.client.glwrap.WGlFramebuffer
 import therealfarfetchd.illuminate.client.glwrap.WGlShader
@@ -53,8 +55,6 @@ import therealfarfetchd.illuminate.client.glwrap.WGlTexture2D
 import therealfarfetchd.illuminate.client.setFramebuffer
 import therealfarfetchd.illuminate.common.util.ext.minus
 import therealfarfetchd.illuminate.common.util.ext.ortho
-import therealfarfetchd.illuminate.common.util.ext.times
-import therealfarfetchd.qcommon.croco.Mat4
 import therealfarfetchd.qcommon.croco.Vec3
 import java.io.IOException
 
@@ -180,7 +180,14 @@ class PostProcess(private val mc: MinecraftClient) {
       val lightSource = LightSource(mc.world!!, lc.light)
       mc.cameraEntity = lightSource
       disableCull()
-      renderWorld(mc.gameRenderer, delta, nanoTime, lc.light, i)
+
+      try {
+        mc.gameRenderer.activeRenderLight = lc
+        mc.gameRenderer.renderWorld(delta, nanoTime, MatrixStack())
+      } finally {
+        mc.gameRenderer.activeRenderLight = null
+      }
+
       blitDepthToTex(lightDepthFb, lc.depth)
 
       glMatrixMode(GL11.GL_PROJECTION)
@@ -199,20 +206,21 @@ class PostProcess(private val mc: MinecraftClient) {
   /**
    * Applies the shader onto the target framebuffer
    */
-  fun paintSurfaces(delta: Float) {
+  fun paintSurfaces(delta: Float, modelview: MatrixStack, projection: MatrixStack) {
     if (activeLights.isEmpty()) return
     if (!shader.isValid) return // something is fucked
 
-    val ce = mc.cameraEntity!!
     val camera = mc.gameRenderer.camera
     val cameraPosVec = camera.pos
-    RenderSystem.translated(-cameraPosVec.x, -cameraPosVec.y, -cameraPosVec.z)
 
     blitDepthToTex(target, playerCamDepth)
 
     clear(GL_DEPTH_BUFFER_BIT, MinecraftClient.IS_SYSTEM_MAC)
 
-    paintSurfaces(target, offscreenFb)
+    modelview.push()
+    modelview.translate(-cameraPosVec.x, -cameraPosVec.y, -cameraPosVec.z)
+    paintSurfaces(target, offscreenFb, modelview.peek().model, projection.peek().model)
+    modelview.pop()
     blit(offscreenFb, target)
 
     target.beginWrite(true)
@@ -221,7 +229,7 @@ class PostProcess(private val mc: MinecraftClient) {
   /**
    * Apply the shader onto the source framebuffer and draw into the target framebuffer
    */
-  private fun paintSurfaces(from: Framebuffer, into: Framebuffer) {
+  private fun paintSurfaces(from: Framebuffer, into: Framebuffer, modelview: Matrix4f, projection: Matrix4f) {
     val sourceW = from.textureWidth
     val sourceH = from.textureHeight
     val targetH = into.textureHeight
@@ -253,13 +261,10 @@ class PostProcess(private val mc: MinecraftClient) {
     glUniformMatrix4fv(uMvp, false, matBuf)
 
     matBuf.clear()
-    glGetFloatv(GL11.GL_MODELVIEW_MATRIX, matBuf)
-    val mv = Mat4.fromBuffer(matBuf)
-    matBuf.clear()
-    glGetFloatv(GL11.GL_PROJECTION_MATRIX, matBuf)
-    val p = Mat4.fromBuffer(matBuf)
-    matBuf.clear()
-    (p * mv).invert().intoBuffer(matBuf)
+    val mvp = projection.copy()
+    mvp.multiply(modelview)
+    mvp.invert()
+    mvp.writeToBuffer(matBuf)
     matBuf.rewind()
     glUniformMatrix4fv(uCamInv, false, matBuf)
 

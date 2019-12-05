@@ -20,10 +20,11 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import therealfarfetchd.illuminate.client.GameRendererExt;
 import therealfarfetchd.illuminate.client.Matrix4fExtKt;
-import therealfarfetchd.illuminate.client.api.Light;
+import therealfarfetchd.illuminate.client.render.LightContainer;
 import therealfarfetchd.illuminate.client.render.PostProcess;
 
 @Mixin(GameRenderer.class)
@@ -34,7 +35,7 @@ public abstract class MixinGameRenderer implements GameRendererExt {
 
     private PostProcess pp;
 
-    private Light activeRenderLight = null;
+    private LightContainer activeRenderLight = null;
 
     private float lastTickDelta;
 
@@ -60,66 +61,64 @@ public abstract class MixinGameRenderer implements GameRendererExt {
         pp.renderLightDepths(tickDelta, limitTime);
     }
 
-    @Inject(method = "renderWorld(FJLnet/minecraft/client/util/math/MatrixStack;)V", at = @At(value = "INVOKE", shift = Shift.AFTER, target = "Lnet/minecraft/client/render/WorldRenderer;render(Lnet/minecraft/client/util/math/MatrixStack;FJZLnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/GameRenderer;Lnet/minecraft/client/render/LightmapTextureManager;Lnet/minecraft/client/util/math/Matrix4f;)V"))
-    private void applyShader(float tickDelta, long limitTime, MatrixStack matrix, CallbackInfo ci) {
+    @Inject(method = "renderWorld(FJLnet/minecraft/client/util/math/MatrixStack;)V", at = @At(value = "INVOKE", shift = Shift.AFTER, target = "Lnet/minecraft/client/render/WorldRenderer;render(Lnet/minecraft/client/util/math/MatrixStack;FJZLnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/GameRenderer;Lnet/minecraft/client/render/LightmapTextureManager;Lnet/minecraft/client/util/math/Matrix4f;)V"), locals = LocalCapture.CAPTURE_FAILHARD)
+    private void applyShader(float tickDelta, long limitTime, MatrixStack modelview, CallbackInfo ci, boolean bl, Camera camera, MatrixStack projection) {
         if (activeRenderLight != null) return;
-        pp.paintSurfaces(tickDelta);
+        pp.paintSurfaces(tickDelta, modelview, projection);
     }
 
     // rendering fixes for light perspective
 
-    @Inject(method = "updateTargetedEntity", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "updateTargetedEntity(F)V", at = @At("HEAD"), cancellable = true)
     private void updateTargetedEntity(float tickDelta, CallbackInfo ci) {
         if (activeRenderLight != null) ci.cancel();
     }
 
-    @Inject(method = "renderWorld", at = @At("HEAD"))
+    @Inject(method = "renderWorld(FJLnet/minecraft/client/util/math/MatrixStack;)V", at = @At("HEAD"))
     private void saveTickDelta(float tickDelta, long limitTime, MatrixStack matrix, CallbackInfo ci) {
         lastTickDelta = tickDelta;
     }
 
-    @ModifyVariable(method = "renderWorld", at = @At(value = "HEAD", ordinal = 0))
+    @ModifyVariable(method = "renderWorld(FJLnet/minecraft/client/util/math/MatrixStack;)V", at = @At(value = "STORE"), ordinal = 0, name = "camera")
     private Camera getCamera(Camera cam) {
-        if (activeRenderLight != null) return camera;
+        if (activeRenderLight == null) return cam;
 
         Camera camera = new Camera();
         camera.update(client.world, client.getCameraEntity() == null ? client.player : client.getCameraEntity(), false, false, lastTickDelta);
         return camera;
     }
 
-    @Inject(method = "method_22973", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "method_22973(Lnet/minecraft/client/render/Camera;FZ)Lnet/minecraft/client/util/math/Matrix4f;", at = @At("HEAD"), cancellable = true)
     private void getProjectionMatrix(Camera camera, float f, boolean bl, CallbackInfoReturnable<Matrix4f> cir) {
         if (activeRenderLight == null) return;
 
         Matrix4f matrix4f = new Matrix4f();
-        Matrix4fExtKt.set(matrix4f, pp.getLights().get(activeRenderLight).getP());
+        Matrix4fExtKt.set(matrix4f, activeRenderLight.getP());
 
         cir.setReturnValue(matrix4f);
     }
 
-    @Inject(method = "bobView", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "bobView(Lnet/minecraft/client/util/math/MatrixStack;F)V", at = @At("HEAD"), cancellable = true)
     private void bobView(MatrixStack matrixStack, float f, CallbackInfo ci) {
         if (activeRenderLight != null) ci.cancel();
     }
 
-    @Inject(method = "bobViewWhenHurt", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "bobViewWhenHurt(Lnet/minecraft/client/util/math/MatrixStack;F)V", at = @At("HEAD"), cancellable = true)
     private void bobViewWhenHurt(MatrixStack matrixStack, float f, CallbackInfo ci) {
         if (activeRenderLight != null) ci.cancel();
     }
 
-    @Inject(method = "renderHand", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "renderHand(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/Camera;F)V", at = @At("HEAD"), cancellable = true)
     private void renderHand(MatrixStack matrixStack, Camera camera, float f, CallbackInfo ci) {
         if (activeRenderLight != null) ci.cancel();
     }
 
-    @ModifyVariable(method = "renderWorld", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/GameRenderer;bobView(Lnet/minecraft/client/util/math/MatrixStack;F)V", ordinal = 0))
+    @ModifyVariable(method = "renderWorld(FJLnet/minecraft/client/util/math/MatrixStack;)V", at = @At(value = "HEAD"), ordinal = 0, name = "f")
     private float getNauseaStrength(float f) {
-        if (activeRenderLight == null) return f;
-
-        return 0f;
+        return activeRenderLight == null ? f : 0f;
     }
 
-    @Redirect(method = "renderWorld", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/util/math/MatrixStack;multiply(Lnet/minecraft/util/math/Quaternion;)V"))
+    @Redirect(method = "renderWorld(FJLnet/minecraft/client/util/math/MatrixStack;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/util/math/MatrixStack;multiply(Lnet/minecraft/util/math/Quaternion;)V"))
     private void multiply(MatrixStack matrixStack, Quaternion quaternion) {
         if (activeRenderLight != null) return;
 
@@ -132,14 +131,13 @@ public abstract class MixinGameRenderer implements GameRendererExt {
         return pp;
     }
 
-    @NotNull
     @Override
-    public Light getActiveRenderLight() {
+    public LightContainer getActiveRenderLight() {
         return activeRenderLight;
     }
 
     @Override
-    public void setActiveRenderLight(@NotNull Light activeRenderLight) {
+    public void setActiveRenderLight(LightContainer activeRenderLight) {
         this.activeRenderLight = activeRenderLight;
     }
 

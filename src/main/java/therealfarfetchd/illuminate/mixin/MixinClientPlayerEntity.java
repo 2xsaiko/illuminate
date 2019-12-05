@@ -18,7 +18,7 @@ public abstract class MixinClientPlayerEntity {
     @Shadow @Final protected MinecraftClient client;
 
     @Inject(method = "isMainPlayer()Z", at = @At("HEAD"), cancellable = true)
-    private void method_7340(CallbackInfoReturnable<Boolean> cir) {
+    private void isMainPlayer(CallbackInfoReturnable<Boolean> cir) {
         // make our player render when the camera is a LightSource
         if (client.getCameraEntity() instanceof LightSource) {
             cir.setReturnValue(false);

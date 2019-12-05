@@ -1,14 +1,14 @@
 package therealfarfetchd.illuminate.client
 
 import net.minecraft.client.render.GameRenderer
-import therealfarfetchd.illuminate.client.api.Light
+import therealfarfetchd.illuminate.client.render.LightContainer
 import therealfarfetchd.illuminate.client.render.PostProcess
 
 interface GameRendererExt {
 
   val postProcess: PostProcess
 
-  var activeRenderLight: Light
+  var activeRenderLight: LightContainer?
 
 }
 

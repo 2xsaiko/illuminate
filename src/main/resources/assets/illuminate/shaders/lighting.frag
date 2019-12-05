@@ -1,6 +1,6 @@
 #version 120
 
-#define NUM_LIGHTS 10
+#define MAX_LIGHTS 10
 
 uniform int width;
 uniform int height;
@@ -8,17 +8,17 @@ uniform int height;
 uniform sampler2D world;
 uniform sampler2D depth;
 
-uniform sampler2D[NUM_LIGHTS] lightTex;
-uniform sampler2D[NUM_LIGHTS] lightDepth;
-uniform mat4[NUM_LIGHTS] lightCam;
-uniform vec3[NUM_LIGHTS] lightPos;
+uniform sampler2D[MAX_LIGHTS] lightTex;
+uniform sampler2D[MAX_LIGHTS] lightDepth;
+uniform mat4[MAX_LIGHTS] lightCam;
+uniform vec3[MAX_LIGHTS] lightPos;
 uniform int lightCount;
 
 uniform mat4 screen2tex = mat4(
-    0.5, 0,   0,   0,
-    0,   0.5, 0,   0,
-    0,   0,   0.5, 0,
-    0.5, 0.5, 0.5, 1
+0.5, 0, 0, 0,
+0, 0.5, 0, 0,
+0, 0, 0.5, 0,
+0.5, 0.5, 0.5, 1
 );
 
 uniform mat4 camInv;

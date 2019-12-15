@@ -8,6 +8,7 @@ import net.minecraft.client.util.math.Matrix4f;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.math.Quaternion;
+import com.mojang.blaze3d.systems.RenderSystem;
 
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Final;
@@ -69,14 +70,14 @@ public abstract class MixinGameRenderer implements GameRendererExt {
 
     // rendering fixes for light perspective
 
-    @Inject(method = "updateTargetedEntity(F)V", at = @At("HEAD"), cancellable = true)
-    private void updateTargetedEntity(float tickDelta, CallbackInfo ci) {
-        if (activeRenderLight != null) ci.cancel();
-    }
-
     @Inject(method = "renderWorld(FJLnet/minecraft/client/util/math/MatrixStack;)V", at = @At("HEAD"))
     private void saveTickDelta(float tickDelta, long limitTime, MatrixStack matrix, CallbackInfo ci) {
         lastTickDelta = tickDelta;
+    }
+
+    @Inject(method = "updateTargetedEntity(F)V", at = @At("HEAD"), cancellable = true)
+    private void updateTargetedEntity(float tickDelta, CallbackInfo ci) {
+        if (activeRenderLight != null) ci.cancel();
     }
 
     @ModifyVariable(method = "renderWorld(FJLnet/minecraft/client/util/math/MatrixStack;)V", at = @At(value = "STORE"), ordinal = 0, name = "camera")
@@ -123,6 +124,13 @@ public abstract class MixinGameRenderer implements GameRendererExt {
         if (activeRenderLight != null) return;
 
         matrixStack.multiply(quaternion);
+    }
+
+    @Redirect(method = "renderWorld(FJLnet/minecraft/client/util/math/MatrixStack;)V", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;clear(IZ)V"))
+    private void clear(int i, boolean bl) {
+        if (activeRenderLight != null) return;
+
+        RenderSystem.clear(i, bl);
     }
 
     @NotNull

@@ -20,9 +20,9 @@ class LightSource(world: World, light: Light) : Entity(Type, world) {
     this.prevZ = this.z
     this.prevPitch = this.pitch
     this.prevYaw = this.yaw
-    this.prevRenderX = this.x
-    this.prevRenderY = this.y
-    this.prevRenderZ = this.z
+    this.lastRenderX = this.x
+    this.lastRenderY = this.y
+    this.lastRenderZ = this.z
   }
 
   override fun writeCustomDataToTag(var1: CompoundTag?) {}

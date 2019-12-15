@@ -1,4 +1,4 @@
-#version 120
+#version 400 core
 
 #define MAX_LIGHTS 10
 
@@ -23,14 +23,14 @@ uniform mat4 screen2tex = mat4(
 
 uniform mat4 camInv;
 
-varying vec2 _uv;
-varying vec2 _xy;
+in vec2 _uv;
+in vec2 _xy;
 
 bool isInBox(in vec3 v) {
     return
-        v.x >= -1 && v.x <= 1 &&
-        v.y >= -1 && v.y <= 1 &&
-        v.z >= -1 && v.z <= 1;
+    v.x >= -1 && v.x <= 1 &&
+    v.y >= -1 && v.y <= 1 &&
+    v.z >= -1 && v.z <= 1;
 }
 
 vec3 toWorldCoords(in vec2 screen, in float depth) {

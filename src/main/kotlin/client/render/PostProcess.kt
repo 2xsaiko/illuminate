@@ -17,7 +17,6 @@ import net.minecraft.client.render.Tessellator
 import net.minecraft.client.render.VertexFormats
 import net.minecraft.client.util.math.Matrix4f
 import net.minecraft.client.util.math.MatrixStack
-import net.minecraft.util.Identifier
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT
@@ -46,17 +45,16 @@ import org.lwjgl.opengl.GL30.GL_DRAW_FRAMEBUFFER
 import org.lwjgl.opengl.GL30.GL_READ_FRAMEBUFFER
 import org.lwjgl.opengl.GL30.glBindFramebuffer
 import org.lwjgl.opengl.GL30.glBlitFramebuffer
-import therealfarfetchd.illuminate.ModID
 import therealfarfetchd.illuminate.client.activeRenderLight
 import therealfarfetchd.illuminate.client.api.Light
 import therealfarfetchd.illuminate.client.glwrap.WGlFramebuffer
 import therealfarfetchd.illuminate.client.glwrap.WGlShader
 import therealfarfetchd.illuminate.client.glwrap.WGlTexture2D
+import therealfarfetchd.illuminate.client.init.Shaders
 import therealfarfetchd.illuminate.client.setFramebuffer
 import therealfarfetchd.illuminate.common.util.ext.minus
 import therealfarfetchd.illuminate.common.util.ext.ortho
 import therealfarfetchd.qcommon.croco.Vec3
-import java.io.IOException
 
 private val matBuf = BufferUtils.createFloatBuffer(16)
 
@@ -67,8 +65,6 @@ class PostProcess(private val mc: MinecraftClient) {
 
   private val width = target.viewportWidth
   private val height = target.viewportHeight
-
-  private val shader: WGlShader
 
   private var uMvp = 0
   private var uCamInv = 0
@@ -83,7 +79,7 @@ class PostProcess(private val mc: MinecraftClient) {
   private var uLightCount = 0
 
   private val offscreenFb = Framebuffer(width, height, true, MinecraftClient.IS_SYSTEM_MAC)
-  private val lightDepthFb = LightFramebuffer(1024, 1024, false)
+  val lightDepthFb = LightFramebuffer(1024, 1024, MinecraftClient.IS_SYSTEM_MAC)
   private val blitFb = WGlFramebuffer.create()
 
   val playerCamDepth = WGlTexture2D.create()
@@ -99,14 +95,13 @@ class PostProcess(private val mc: MinecraftClient) {
     playerCamDepth.texParameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
     playerCamDepth.texParameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
 
-    shader = try {
-      val vshs = mc.resourceManager.getResource(Identifier(ModID, "shaders/lighting.vert")).use { it.inputStream.bufferedReader().readText() }
-      val fshs = mc.resourceManager.getResource(Identifier(ModID, "shaders/lighting.frag")).use { it.inputStream.bufferedReader().readText() }
+    blitFb.bind()
+    glDrawBuffer(GL11.GL_NONE)
+    mc.framebuffer.beginWrite(false)
+  }
 
-      mkShader(vshs, fshs)
-    } catch (e: IOException) {
-      WGlShader.None
-    }
+  fun onShaderReload() {
+    val shader = WGlShader(Shaders.lighting())
 
     if (shader.isValid) {
       shader.enable()
@@ -129,10 +124,6 @@ class PostProcess(private val mc: MinecraftClient) {
 
       shader.disable()
     }
-
-    blitFb.bind()
-    glDrawBuffer(GL11.GL_NONE)
-    mc.framebuffer.beginWrite(false)
   }
 
   /**
@@ -164,19 +155,22 @@ class PostProcess(private val mc: MinecraftClient) {
     val oldCam = mc.cameraEntity
     mc.options.hudHidden = true
     val window = mc.framebuffer
-    for ((i, lc) in activeLights.withIndex()) {
+    for (lc in activeLights) {
       lightDepthFb.beginWrite(true)
       glClear(GL_DEPTH_BUFFER_BIT or GL_COLOR_BUFFER_BIT)
       mc.setFramebuffer(lightDepthFb)
 
       glMatrixMode(GL11.GL_PROJECTION)
       pushMatrix()
+      loadIdentity()
       glMatrixMode(GL11.GL_MODELVIEW)
       pushMatrix()
+      loadIdentity()
 
       lc.light.prepare(delta)
 
-      setupCamera(lc)
+      // setupCamera(lc)
+
       val lightSource = LightSource(mc.world!!, lc.light)
       mc.cameraEntity = lightSource
       disableCull()
@@ -194,8 +188,8 @@ class PostProcess(private val mc: MinecraftClient) {
       popMatrix()
       glMatrixMode(GL11.GL_MODELVIEW)
       popMatrix()
-
     }
+
     mc.setFramebuffer(window)
     window.beginWrite(true)
 
@@ -207,6 +201,8 @@ class PostProcess(private val mc: MinecraftClient) {
    * Applies the shader onto the target framebuffer
    */
   fun paintSurfaces(delta: Float, modelview: MatrixStack, projection: MatrixStack) {
+    val shader = WGlShader(Shaders.lighting())
+
     if (activeLights.isEmpty()) return
     if (!shader.isValid) return // something is fucked
 
@@ -230,6 +226,8 @@ class PostProcess(private val mc: MinecraftClient) {
    * Apply the shader onto the source framebuffer and draw into the target framebuffer
    */
   private fun paintSurfaces(from: Framebuffer, into: Framebuffer, modelview: Matrix4f, projection: Matrix4f) {
+    val shader = WGlShader(Shaders.lighting())
+
     val sourceW = from.textureWidth
     val sourceH = from.textureHeight
     val targetH = into.textureHeight
@@ -318,27 +316,6 @@ class PostProcess(private val mc: MinecraftClient) {
   }
 
   /**
-   * Sets up GL's modelview and projection matrices according to the information from the passed [Light]
-   */
-  private fun setupCamera(light: LightContainer) {
-    //    val matBuf = matBuf
-    //
-    //    matBuf.clear()
-    //    light.p.intoBuffer(matBuf)
-    //    matBuf.rewind()
-    //    matrixMode(GL11.GL_PROJECTION)
-    //    loadIdentity()
-    //    multMatrix(matBuf)
-    //
-    //    matBuf.clear()
-    //    light.mv.intoBuffer(matBuf)
-    //    matBuf.rewind()
-    //    matrixMode(GL11.GL_MODELVIEW)
-    //    loadIdentity()
-    //    multMatrix(matBuf)
-  }
-
-  /**
    * Copies the contents of a [GlFramebuffer] into another [GlFramebuffer].
    */
   private fun blit(from: Framebuffer, into: Framebuffer) {
@@ -373,7 +350,6 @@ class PostProcess(private val mc: MinecraftClient) {
    * Destroy the native resources this [PostProcess] object occupies. It will be unusable after this operation
    */
   fun destroy() {
-    shader.destroy()
     playerCamDepth.destroy()
     offscreenFb.delete()
     lightDepthFb.delete()

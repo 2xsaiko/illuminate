@@ -1,45 +1,37 @@
 package therealfarfetchd.illuminate.client.render
 
+import com.mojang.blaze3d.platform.FramebufferInfo
+import com.mojang.blaze3d.platform.GlStateManager
+import com.mojang.blaze3d.systems.RenderSystem
 import net.minecraft.client.gl.Framebuffer
-import org.lwjgl.opengl.GL14.GL_DEPTH_COMPONENT24
-import org.lwjgl.opengl.GL30.GL_DEPTH_ATTACHMENT
-import org.lwjgl.opengl.GL30.GL_FRAMEBUFFER
-import org.lwjgl.opengl.GL30.GL_RENDERBUFFER
-import org.lwjgl.opengl.GL30.glBindFramebuffer
-import org.lwjgl.opengl.GL30.glBindRenderbuffer
-import org.lwjgl.opengl.GL30.glFramebufferRenderbuffer
-import org.lwjgl.opengl.GL30.glGenFramebuffers
-import org.lwjgl.opengl.GL30.glGenRenderbuffers
-import org.lwjgl.opengl.GL30.glRenderbufferStorage
 
-class LightFramebuffer(width: Int, height: Int, clear: Boolean) : Framebuffer(width, height, true, clear) {
+class LightFramebuffer(width: Int, height: Int, getError: Boolean) : Framebuffer(width, height, true, getError) {
 
-  override fun initFbo(width: Int, height: Int, clear: Boolean) {
+  override fun initFbo(width: Int, height: Int, getError: Boolean) {
+    RenderSystem.assertThread { RenderSystem.isOnRenderThreadOrInit() }
     viewportWidth = width
     viewportHeight = height
     textureWidth = width
     textureHeight = height
-    fbo = glGenFramebuffers()
+    fbo = GlStateManager.genFramebuffers()
     // colorAttachment = TextureUtil.generateTextureId()
     if (useDepthAttachment) {
-      depthAttachment = glGenRenderbuffers()
+      depthAttachment = GlStateManager.genRenderbuffers()
     }
 
     // setTexFilter(9728)
     // GlStateManager.bindTexture(colorAttachment)
-    // texImage2D(3553, 0, 32856, texWidth, texHeight, 0, 6408, 5121, null as IntBuffer?)
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo)
-    // GLX.glFramebufferTexture2D(GLX.GL_FRAMEBUFFER, GLX.GL_COLOR_ATTACHMENT0, 3553, colorAttachment, 0)
+    // GlStateManager.texImage2D(3553, 0, 32856, textureWidth, textureHeight, 0, 6408, 5121, null as IntBuffer?)
+    GlStateManager.bindFramebuffer(FramebufferInfo.target, fbo)
+    // GlStateManager.framebufferTexture2D(FramebufferInfo.target, FramebufferInfo.field_20459, 3553, colorAttachment, 0)
     if (useDepthAttachment) {
-      glBindRenderbuffer(GL_RENDERBUFFER, depthAttachment)
-      glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, textureWidth, textureHeight)
-      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthAttachment)
+      GlStateManager.bindRenderbuffer(FramebufferInfo.renderBufferTarget, depthAttachment)
+      GlStateManager.renderbufferStorage(FramebufferInfo.renderBufferTarget, 33190, textureWidth, textureHeight)
+      GlStateManager.framebufferRenderbuffer(FramebufferInfo.target, FramebufferInfo.attachment, FramebufferInfo.renderBufferTarget, depthAttachment)
     }
 
-    // glDrawBuffer(GL_NONE)
-
     checkFramebufferStatus()
-    clear(clear)
+    this.clear(getError)
     endRead()
   }
 

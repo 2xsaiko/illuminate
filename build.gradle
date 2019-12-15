@@ -22,7 +22,7 @@ version = project.mod_version
 group = project.maven_group
 
 repositories {
-    maven { url = 'https://maven.therealfarfetchd.dev/' }
+    maven { url = 'https://maven.dblsaiko.net/' }
 }
 
 minecraft {

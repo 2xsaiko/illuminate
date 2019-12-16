@@ -23,7 +23,7 @@ class ProjectorBlock : Block(Block.Settings.of(Material.METAL)) {
   }
 
   override fun getPlacementState(ctx: ItemPlacementContext): BlockState? {
-    return this.defaultState.with(HORIZONTAL_FACING, ctx.playerLookDirection.opposite)
+    return this.defaultState.with(HORIZONTAL_FACING, ctx.playerFacing.opposite)
   }
 
   override fun rotate(state: BlockState, rotation: BlockRotation): BlockState =

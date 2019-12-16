@@ -7,6 +7,7 @@ import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.util.math.Matrix4f;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.resource.ResourceManager;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Quaternion;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -114,9 +115,9 @@ public abstract class MixinGameRenderer implements GameRendererExt {
         if (activeRenderLight != null) ci.cancel();
     }
 
-    @ModifyVariable(method = "renderWorld(FJLnet/minecraft/client/util/math/MatrixStack;)V", at = @At(value = "HEAD"), ordinal = 0, name = "f")
-    private float getNauseaStrength(float f) {
-        return activeRenderLight == null ? f : 0f;
+    @Redirect(method = "renderWorld(FJLnet/minecraft/client/util/math/MatrixStack;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/math/MathHelper;lerp(FFF)F", ordinal = 0))
+    private float getNauseaStrength(float delta, float first, float second) {
+        return activeRenderLight == null ? MathHelper.lerp(delta, first, second) : 0f;
     }
 
     @Redirect(method = "renderWorld(FJLnet/minecraft/client/util/math/MatrixStack;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/util/math/MatrixStack;multiply(Lnet/minecraft/util/math/Quaternion;)V"))

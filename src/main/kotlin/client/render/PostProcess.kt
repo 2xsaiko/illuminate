@@ -153,7 +153,9 @@ class PostProcess(private val mc: MinecraftClient) {
 
     val oldHudHidden = mc.options.hudHidden
     val oldCam = mc.cameraEntity
+    val oldPerspective = mc.options.perspective
     mc.options.hudHidden = true
+    mc.options.perspective = 0
     val window = mc.framebuffer
     for (lc in activeLights) {
       lightDepthFb.beginWrite(true)
@@ -195,6 +197,7 @@ class PostProcess(private val mc: MinecraftClient) {
 
     mc.cameraEntity = oldCam
     mc.options.hudHidden = oldHudHidden
+    mc.options.perspective = oldPerspective
   }
 
   /**

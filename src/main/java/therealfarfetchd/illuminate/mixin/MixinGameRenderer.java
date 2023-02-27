@@ -1,17 +1,18 @@
 package therealfarfetchd.illuminate.mixin;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.BufferBuilderStorage;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.util.math.Matrix4f;
+import net.minecraft.client.render.item.HeldItemRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Quaternion;
-import com.mojang.blaze3d.systems.RenderSystem;
-
 import org.jetbrains.annotations.NotNull;
+import org.joml.Matrix3f;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -23,9 +24,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
-
 import therealfarfetchd.illuminate.client.GameRendererExt;
-import therealfarfetchd.illuminate.client.Matrix4fExtKt;
 import therealfarfetchd.illuminate.client.render.LightContainer;
 import therealfarfetchd.illuminate.client.render.PostProcess;
 
@@ -41,8 +40,8 @@ public abstract class MixinGameRenderer implements GameRendererExt {
 
     private float lastTickDelta;
 
-    @Inject(method = "<init>(Lnet/minecraft/client/MinecraftClient;Lnet/minecraft/resource/ResourceManager;Lnet/minecraft/client/render/BufferBuilderStorage;)V", at = @At("RETURN"))
-    private void init(MinecraftClient client, ResourceManager resourceManager, BufferBuilderStorage bufferBuilderStorage, CallbackInfo ci) {
+    @Inject(method = "Lnet/minecraft/client/render/GameRenderer;<init>(Lnet/minecraft/client/MinecraftClient;Lnet/minecraft/client/render/item/HeldItemRenderer;Lnet/minecraft/resource/ResourceManager;Lnet/minecraft/client/render/BufferBuilderStorage;)V", at = @At("RETURN"))
+    private void init(MinecraftClient client, HeldItemRenderer heldItemRenderer, ResourceManager resourceManager, BufferBuilderStorage buffers, CallbackInfo ci) {
         pp = new PostProcess(client);
     }
 
@@ -60,11 +59,11 @@ public abstract class MixinGameRenderer implements GameRendererExt {
     private void renderLights(float tickDelta, long limitTime, MatrixStack matrix, CallbackInfo ci) {
         if (activeRenderLight != null) return;
         pp.setupLights(tickDelta);
-        pp.renderLightDepths(tickDelta, limitTime);
+        pp.renderLightDepths(tickDelta, limitTime, matrix);
     }
 
-    @Inject(method = "renderWorld(FJLnet/minecraft/client/util/math/MatrixStack;)V", at = @At(value = "INVOKE", shift = Shift.AFTER, target = "Lnet/minecraft/client/render/WorldRenderer;render(Lnet/minecraft/client/util/math/MatrixStack;FJZLnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/GameRenderer;Lnet/minecraft/client/render/LightmapTextureManager;Lnet/minecraft/client/util/math/Matrix4f;)V"), locals = LocalCapture.CAPTURE_FAILHARD)
-    private void applyShader(float tickDelta, long limitTime, MatrixStack modelview, CallbackInfo ci, boolean bl, Camera camera, MatrixStack projection) {
+    @Inject(method = "renderWorld(FJLnet/minecraft/client/util/math/MatrixStack;)V", at = @At(value = "INVOKE", shift = Shift.AFTER, target = "Lnet/minecraft/client/render/WorldRenderer;render(Lnet/minecraft/client/util/math/MatrixStack;FJZLnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/GameRenderer;Lnet/minecraft/client/render/LightmapTextureManager;Lorg/joml/Matrix4f;)V"), locals = LocalCapture.CAPTURE_FAILHARD)
+    private void applyShader(float tickDelta, long limitTime, MatrixStack modelview, CallbackInfo ci, boolean bl, Camera camera, MatrixStack projection, double d, Matrix4f matrix4f, Matrix3f matrix3f) {
         if (activeRenderLight != null) return;
         pp.paintSurfaces(tickDelta, modelview, projection);
     }
@@ -90,12 +89,11 @@ public abstract class MixinGameRenderer implements GameRendererExt {
         return camera;
     }
 
-    @Inject(method = "method_22973(Lnet/minecraft/client/render/Camera;FZ)Lnet/minecraft/client/util/math/Matrix4f;", at = @At("HEAD"), cancellable = true)
-    private void getProjectionMatrix(Camera camera, float f, boolean bl, CallbackInfoReturnable<Matrix4f> cir) {
+    @Inject(method = "Lnet/minecraft/client/render/GameRenderer;getBasicProjectionMatrix(D)Lorg/joml/Matrix4f;", at = @At("HEAD"), cancellable = true)
+    private void getProjectionMatrix(double fov, CallbackInfoReturnable<Matrix4f> cir) {
         if (activeRenderLight == null) return;
 
-        Matrix4f matrix4f = new Matrix4f();
-        Matrix4fExtKt.set(matrix4f, activeRenderLight.getP());
+        Matrix4f matrix4f = new Matrix4f(activeRenderLight.getP());
 
         cir.setReturnValue(matrix4f);
     }
@@ -120,8 +118,8 @@ public abstract class MixinGameRenderer implements GameRendererExt {
         return activeRenderLight == null ? MathHelper.lerp(delta, first, second) : 0f;
     }
 
-    @Redirect(method = "renderWorld(FJLnet/minecraft/client/util/math/MatrixStack;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/util/math/MatrixStack;multiply(Lnet/minecraft/util/math/Quaternion;)V"))
-    private void multiply(MatrixStack matrixStack, Quaternion quaternion) {
+    @Redirect(method = "renderWorld(FJLnet/minecraft/client/util/math/MatrixStack;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/util/math/MatrixStack;multiply(Lorg/joml/Quaternionf;)V"))
+    private void multiply(MatrixStack matrixStack, Quaternionf quaternion) {
         if (activeRenderLight != null) return;
 
         matrixStack.multiply(quaternion);

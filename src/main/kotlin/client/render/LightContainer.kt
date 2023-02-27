@@ -1,5 +1,6 @@
 package therealfarfetchd.illuminate.client.render
 
+import org.joml.Matrix4f
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL12
 import therealfarfetchd.illuminate.client.api.Light
@@ -7,7 +8,6 @@ import therealfarfetchd.illuminate.client.glwrap.WGlTexture2D
 import therealfarfetchd.illuminate.common.util.ext.perspective
 import therealfarfetchd.illuminate.common.util.ext.times
 import therealfarfetchd.illuminate.common.util.ext.unaryMinus
-import therealfarfetchd.qcommon.croco.Mat4
 
 data class LightContainer(val light: Light) {
 
@@ -93,11 +93,11 @@ data class LightContainer(val light: Light) {
       if (value) mvpDirty = true
     }
 
-  var mv: Mat4 = Mat4.IDENTITY
+  var mv: Matrix4f = Matrix4f()
     get() {
       update()
       if (mvDirty) {
-        field = Mat4.IDENTITY
+        field = Matrix4f()
           .rotate(0f, 0f, 1f, cachedRoll)
           .rotate(1f, 0f, 0f, cachedPitch)
           .rotate(0f, 1f, 0f, cachedYaw)
@@ -107,7 +107,7 @@ data class LightContainer(val light: Light) {
     }
     private set
 
-  var p: Mat4 = Mat4.IDENTITY
+  var p: Matrix4f = Matrix4f()
     get() {
       update()
       if (pDirty) {
@@ -118,11 +118,11 @@ data class LightContainer(val light: Light) {
     }
     private set
 
-  var mvp: Mat4 = Mat4.IDENTITY
+  var mvp: Matrix4f = Matrix4f()
     get() {
       update()
       if (mvpDirty) {
-        field = p * mv.translate(-cachedPos)
+        field = p.mul(mv.translate(-cachedPos))
         mvpDirty = false
       }
       return field

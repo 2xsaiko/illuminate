@@ -1,5 +1,6 @@
 package therealfarfetchd.illuminate.common.block
 
+import net.fabricmc.fabric.api.`object`.builder.v1.block.FabricBlockSettings
 import net.minecraft.block.Block
 import net.minecraft.block.BlockState
 import net.minecraft.block.Material
@@ -14,7 +15,7 @@ import net.minecraft.world.World
 import therealfarfetchd.illuminate.client.api.Lights
 import therealfarfetchd.illuminate.client.test.BlockLight
 
-class ProjectorBlock : Block(Block.Settings.of(Material.METAL)) {
+class ProjectorBlock : Block(FabricBlockSettings.of(Material.METAL)) {
 
   override fun onBlockAdded(state: BlockState?, world: World?, pos: BlockPos, oldState: BlockState?, moved: Boolean) {
     MinecraftClient.getInstance().execute {

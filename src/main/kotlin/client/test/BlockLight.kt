@@ -1,23 +1,23 @@
 package therealfarfetchd.illuminate.client.test
 
-import com.mojang.blaze3d.platform.GlStateManager.bindTexture
+import com.mojang.blaze3d.systems.RenderSystem
 import net.minecraft.client.MinecraftClient
 import net.minecraft.state.property.Properties
 import net.minecraft.util.Identifier
 import net.minecraft.util.math.BlockPos
+import org.joml.Vector3f
 import therealfarfetchd.illuminate.ModID
 import therealfarfetchd.illuminate.client.api.Light
 import therealfarfetchd.illuminate.client.api.Lights
 import therealfarfetchd.illuminate.client.glwrap.WGlTexture2D
 import therealfarfetchd.illuminate.common.init.Blocks
-import therealfarfetchd.qcommon.croco.Vec3
 import kotlin.math.sqrt
 
 class BlockLight(val bp: BlockPos) : Light {
 
   override val tex = getTex().id
 
-  override val pos: Vec3 = Vec3(bp.x + 0.5f, bp.y + 0.5f, bp.z + 0.5f)
+  override val pos: Vector3f = Vector3f(bp.x + 0.5f, bp.y + 0.5f, bp.z + 0.5f)
 
   override var yaw: Float = 80f
 
@@ -47,7 +47,7 @@ class BlockLight(val bp: BlockPos) : Light {
       val tm = MinecraftClient.getInstance().textureManager
       val identifier = Identifier(ModID, "textures/test.png")
       tm.bindTexture(identifier)
-      bindTexture(0)
+      RenderSystem.bindTexture(0)
 
       return WGlTexture2D(tm.getTexture(identifier)!!.glId)
     }

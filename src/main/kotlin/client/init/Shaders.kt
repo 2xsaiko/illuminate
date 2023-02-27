@@ -4,7 +4,7 @@ import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper
 import net.minecraft.client.MinecraftClient
 import net.minecraft.resource.ResourceManager
-import net.minecraft.resource.ResourceReloadListener.Synchronizer
+import net.minecraft.resource.ResourceReloader
 import net.minecraft.resource.ResourceType.CLIENT_RESOURCES
 import net.minecraft.util.Identifier
 import net.minecraft.util.profiler.Profiler
@@ -39,7 +39,7 @@ object Shaders {
   init {
     ResourceManagerHelper.get(CLIENT_RESOURCES).registerReloadListener(object : IdentifiableResourceReloadListener {
 
-      override fun reload(s: Synchronizer, rm: ResourceManager, profiler: Profiler, profiler1: Profiler, executor: Executor, executor1: Executor): CompletableFuture<Void> {
+      override fun reload(s: ResourceReloader.Synchronizer, rm: ResourceManager, profiler: Profiler, profiler1: Profiler, executor: Executor, executor1: Executor): CompletableFuture<Void> {
         return CompletableFuture.runAsync(Runnable {
           if (lighting != 0) glDeleteProgram(lighting)
 
@@ -55,8 +55,14 @@ object Shaders {
   }
 
   private fun loadShader(rm: ResourceManager, id: String): Int {
-    val vshs = rm.getResource(Identifier(ModID, "shaders/$id.vert")).use { it.inputStream.bufferedReader().readText() }
-    val fshs = rm.getResource(Identifier(ModID, "shaders/$id.frag")).use { it.inputStream.bufferedReader().readText() }
+    val vshsR = rm.getResource(Identifier(ModID, "shaders/$id.vert")).get()
+    val fshsR = rm.getResource(Identifier(ModID, "shaders/$id.frag")).get()
+
+    val vshs = vshsR.inputStream.bufferedReader().readText()
+    val fshs = fshsR.inputStream.bufferedReader().readText()
+
+    vshsR.inputStream.close()
+    fshsR.inputStream.close()
 
     val vsh = glCreateShader(GL_VERTEX_SHADER)
     val fsh = glCreateShader(GL_FRAGMENT_SHADER)

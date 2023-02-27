@@ -8,21 +8,21 @@ import com.mojang.blaze3d.systems.RenderSystem.depthMask
 import com.mojang.blaze3d.systems.RenderSystem.disableCull
 import com.mojang.blaze3d.systems.RenderSystem.disableTexture
 import com.mojang.blaze3d.systems.RenderSystem.enableTexture
-import com.mojang.blaze3d.systems.RenderSystem.loadIdentity
-import com.mojang.blaze3d.systems.RenderSystem.popMatrix
-import com.mojang.blaze3d.systems.RenderSystem.pushMatrix
 import net.minecraft.client.MinecraftClient
 import net.minecraft.client.gl.Framebuffer
+import net.minecraft.client.gl.SimpleFramebuffer
+import net.minecraft.client.option.Perspective
 import net.minecraft.client.render.Tessellator
+import net.minecraft.client.render.VertexFormat
 import net.minecraft.client.render.VertexFormats
-import net.minecraft.client.util.math.Matrix4f
 import net.minecraft.client.util.math.MatrixStack
+import org.joml.Matrix4f
+import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT
 import org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT
 import org.lwjgl.opengl.GL11.GL_NEAREST
-import org.lwjgl.opengl.GL11.GL_QUADS
 import org.lwjgl.opengl.GL11.GL_TEXTURE_MAG_FILTER
 import org.lwjgl.opengl.GL11.GL_TEXTURE_MIN_FILTER
 import org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_S
@@ -52,9 +52,7 @@ import therealfarfetchd.illuminate.client.glwrap.WGlShader
 import therealfarfetchd.illuminate.client.glwrap.WGlTexture2D
 import therealfarfetchd.illuminate.client.init.Shaders
 import therealfarfetchd.illuminate.client.setFramebuffer
-import therealfarfetchd.illuminate.common.util.ext.minus
 import therealfarfetchd.illuminate.common.util.ext.ortho
-import therealfarfetchd.qcommon.croco.Vec3
 
 private val matBuf = BufferUtils.createFloatBuffer(16)
 
@@ -78,7 +76,7 @@ class PostProcess(private val mc: MinecraftClient) {
   private val uLightPos = IntArray(10)
   private var uLightCount = 0
 
-  private val offscreenFb = Framebuffer(width, height, true, MinecraftClient.IS_SYSTEM_MAC)
+  private val offscreenFb = SimpleFramebuffer(width, height, true, MinecraftClient.IS_SYSTEM_MAC)
   val lightDepthFb = LightFramebuffer(1024, 1024, MinecraftClient.IS_SYSTEM_MAC)
   private val blitFb = WGlFramebuffer.create()
 
@@ -133,8 +131,8 @@ class PostProcess(private val mc: MinecraftClient) {
     activeLights =
       if (lights.size < 10) lights.values.toSet()
       else {
-        val camPos = Vec3.from(mc.gameRenderer.camera.pos)
-        lights.values.asSequence().sortedBy { (it.light.pos - camPos).lengthSq }.take(10).toSet()
+        val camPos = Vector3f(mc.gameRenderer.camera.pos.x.toFloat(), mc.gameRenderer.camera.pos.y.toFloat(), mc.gameRenderer.camera.pos.z.toFloat())
+        lights.values.asSequence().sortedBy { (it.light.pos.sub(camPos)).lengthSquared() }.take(10).toSet()
       }
   }
 
@@ -148,26 +146,21 @@ class PostProcess(private val mc: MinecraftClient) {
   /**
    * Draws the world from each light's perspective and saves the depth buffer for later use.
    */
-  fun renderLightDepths(delta: Float, nanoTime: Long) {
+  fun renderLightDepths(delta: Float, nanoTime: Long, matrix: MatrixStack) {
     if (activeLights.isEmpty()) return
 
     val oldHudHidden = mc.options.hudHidden
     val oldCam = mc.cameraEntity
     val oldPerspective = mc.options.perspective
     mc.options.hudHidden = true
-    mc.options.perspective = 0
+    mc.options.perspective = Perspective.FIRST_PERSON
     val window = mc.framebuffer
     for (lc in activeLights) {
       lightDepthFb.beginWrite(true)
       glClear(GL_DEPTH_BUFFER_BIT or GL_COLOR_BUFFER_BIT)
       mc.setFramebuffer(lightDepthFb)
 
-      glMatrixMode(GL11.GL_PROJECTION)
-      pushMatrix()
-      loadIdentity()
-      glMatrixMode(GL11.GL_MODELVIEW)
-      pushMatrix()
-      loadIdentity()
+      matrix.push()
 
       lc.light.prepare(delta)
 
@@ -186,10 +179,7 @@ class PostProcess(private val mc: MinecraftClient) {
 
       blitDepthToTex(lightDepthFb, lc.depth)
 
-      glMatrixMode(GL11.GL_PROJECTION)
-      popMatrix()
-      glMatrixMode(GL11.GL_MODELVIEW)
-      popMatrix()
+      matrix.pop()
     }
 
     mc.setFramebuffer(window)
@@ -218,7 +208,7 @@ class PostProcess(private val mc: MinecraftClient) {
 
     modelview.push()
     modelview.translate(-cameraPosVec.x, -cameraPosVec.y, -cameraPosVec.z)
-    paintSurfaces(target, offscreenFb, modelview.peek().model, projection.peek().model)
+    paintSurfaces(target, offscreenFb, modelview.peek().positionMatrix, projection.peek().positionMatrix)
     modelview.pop()
     blit(offscreenFb, target)
 
@@ -257,15 +247,15 @@ class PostProcess(private val mc: MinecraftClient) {
     glUniform1i(uLightCount, activeLights.size)
 
     matBuf.clear()
-    ortho(0f, targetW.toFloat(), targetH.toFloat(), 0f, -1f, 1f).intoBuffer(matBuf)
+    ortho(0f, targetW.toFloat(), targetH.toFloat(), 0f, -1f, 1f).get(matBuf)
     matBuf.rewind()
     glUniformMatrix4fv(uMvp, false, matBuf)
 
     matBuf.clear()
-    val mvp = projection.copy()
-    mvp.multiply(modelview)
+    val mvp = Matrix4f(projection)
+    mvp.mul(modelview)
     mvp.invert()
-    mvp.writeToBuffer(matBuf)
+    mvp.get(matBuf)
     matBuf.rewind()
     glUniformMatrix4fv(uCamInv, false, matBuf)
 
@@ -278,7 +268,7 @@ class PostProcess(private val mc: MinecraftClient) {
 
     val t = Tessellator.getInstance()
     val buf = t.buffer
-    buf.begin(GL_QUADS, VertexFormats.POSITION)
+    buf.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION)
     buf.vertex(0.0, 0.0, 0.0).next()
     buf.vertex(0.0, targetH.toDouble(), 0.0).next()
     buf.vertex(targetW.toDouble(), targetH.toDouble(), 0.0).next()
@@ -311,7 +301,7 @@ class PostProcess(private val mc: MinecraftClient) {
     glUniform1i(uLightDepth[i], 4 + 2 * i)
 
     matBuf.clear()
-    l.mvp.intoBuffer(matBuf)
+    l.mvp.get(matBuf)
     matBuf.rewind()
     glUniformMatrix4fv(uLightCam[i], false, matBuf)
 

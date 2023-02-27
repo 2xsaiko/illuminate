@@ -1,6 +1,6 @@
 package therealfarfetchd.illuminate.client.api
 
-import therealfarfetchd.qcommon.croco.Vec3
+import org.joml.Vector3f
 
 /**
  * An oriented light which projects a texture.
@@ -15,7 +15,7 @@ interface Light {
   /**
    * The origin point of the light
    */
-  val pos: Vec3
+  val pos: Vector3f
 
   /**
    * The yaw rotation of the light

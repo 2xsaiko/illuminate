@@ -9,7 +9,6 @@
     "MixinGameRenderer",
     "MixinGlStateManager",
     "MixinMinecraftClient",
-    "MixinMatrix4f",
     "MixinWorldRenderer"
   ],
   "injectors": {

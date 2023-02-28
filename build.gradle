@@ -45,15 +45,10 @@ dependencies {
 }
 
 processResources {
-    inputs.property 'version', project.version
+    inputs.property "version", project.version
 
-    from(sourceSets.main.resources.srcDirs) {
-        include 'fabric.mod.json'
-        expand 'version': project.version
-    }
-
-    from(sourceSets.main.resources.srcDirs) {
-        exclude 'fabric.mod.json'
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
     }
 }
 
@@ -97,4 +92,4 @@ publishing {
     }
 }
 
-apply from : 'https://raw.githubusercontent.com/therealfarfetchd/gradle-tools/master/publish/publish-slim.gradle'
+apply from: 'https://dblsaiko.net/pub/gradle/publish-slim.gradle'

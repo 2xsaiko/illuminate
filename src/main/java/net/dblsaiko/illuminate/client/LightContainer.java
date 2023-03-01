@@ -9,6 +9,8 @@ import org.joml.Vector3fc;
 import org.lwjgl.opengl.GL31;
 
 public class LightContainer {
+    private static final float DEG_TO_RAD = (float) (Math.PI / 180);
+
     private final Light light;
     private int depthTex = 0;
 
@@ -76,9 +78,9 @@ public class LightContainer {
     private Matrix4fc _mv() {
         if (this.mvDirty) {
             this.mv.set(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
-            this.mv.rotate(this.cachedRoll, 0, 0, 1);
-            this.mv.rotate(this.cachedPitch, 1, 0, 0);
-            this.mv.rotate(this.cachedYaw, 0, 1, 0);
+            this.mv.rotate(this.cachedRoll * DEG_TO_RAD, 0, 0, 1);
+            this.mv.rotate(this.cachedPitch * DEG_TO_RAD, 1, 0, 0);
+            this.mv.rotate(this.cachedYaw * DEG_TO_RAD, 0, 1, 0);
             this.mvDirty = false;
             this.mvpDirty = true;
         }
@@ -89,7 +91,7 @@ public class LightContainer {
     private Matrix4fc _p() {
         if (this.pDirty) {
             this.p.set(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
-            this.p.perspective(this.cachedFov, this.cachedAspect, this.cachedNear, this.cachedFar);
+            this.p.perspective(this.cachedFov * DEG_TO_RAD, this.cachedAspect, this.cachedNear, this.cachedFar);
             this.pDirty = false;
             this.mvpDirty = true;
         }

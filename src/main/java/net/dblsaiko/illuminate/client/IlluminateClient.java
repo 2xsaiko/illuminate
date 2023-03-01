@@ -15,7 +15,7 @@ public class IlluminateClient {
 
     public IlluminateClient(MinecraftClient mc) {
         this.mc = mc;
-        this.shaders = new Shaders(mc);
+        this.shaders = new Shaders(this, mc);
     }
 
     public static void initializeClient() {
@@ -43,6 +43,10 @@ public class IlluminateClient {
 
     public boolean removeLight(Light light) {
         return GameRendererExt.from(this.mc.gameRenderer).postProcess().removeLight(light);
+    }
+
+    public int getMaxLights() {
+        return GameRendererExt.from(this.mc.gameRenderer).postProcess().getMaxLights();
     }
 
     public void onJoinWorld() {

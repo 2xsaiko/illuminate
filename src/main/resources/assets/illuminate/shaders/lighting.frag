@@ -1,7 +1,5 @@
 #version 400 core
 
-#define MAX_LIGHTS 10
-
 uniform int width;
 uniform int height;
 

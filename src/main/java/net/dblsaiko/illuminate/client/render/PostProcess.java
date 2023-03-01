@@ -27,7 +27,9 @@ import java.nio.FloatBuffer;
 import java.util.*;
 
 public class PostProcess {
-    private static final int CAM_LIMIT = 10;
+    // Apple can suck my ass
+    // TODO: get max samplers from GL
+    private static final int CAM_LIMIT = MinecraftClient.IS_SYSTEM_MAC ? 7 : 10;
 
     private static final FloatBuffer MAT_BUF = BufferUtils.createFloatBuffer(16);
 
@@ -77,6 +79,10 @@ public class PostProcess {
         this.target.beginWrite(false);
     }
 
+    public int getMaxLights() {
+        return CAM_LIMIT;
+    }
+
     public int playerCamDepthTex() {
         return this.playerCamDepthTex;
     }
@@ -111,7 +117,7 @@ public class PostProcess {
             this.uWorld = GlStateManager._glGetUniformLocation(shader, "world");
             this.uDepth = GlStateManager._glGetUniformLocation(shader, "depth");
 
-            for (int i = 0; i < 10; i += 1) {
+            for (int i = 0; i < CAM_LIMIT; i += 1) {
                 this.uLightTex[i] = GlStateManager._glGetUniformLocation(shader, "lightTex[%d]".formatted(i));
                 this.uLightDepth[i] = GlStateManager._glGetUniformLocation(shader, "lightDepth[%d]".formatted(i));
                 this.uLightCam[i] = GlStateManager._glGetUniformLocation(shader, "lightCam[%d]".formatted(i));
@@ -139,7 +145,7 @@ public class PostProcess {
         this.lights.values()
                 .stream()
                 .sorted(Comparator.comparingDouble(el -> el.light().pos().sub(camPos, new Vector3f()).lengthSquared()))
-                .limit(10)
+                .limit(CAM_LIMIT)
                 .forEach(this.activeLights::add);
     }
 

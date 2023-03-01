@@ -9,6 +9,8 @@ import net.minecraft.resource.ResourceManager;
 import net.minecraft.resource.ResourceType;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.profiler.Profiler;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL31;
 
@@ -18,11 +20,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 public final class Shaders {
+    private static final Logger LOGGER = LogManager.getLogger(Shaders.class);
+
+    private final IlluminateClient ic;
     private final MinecraftClient mc;
 
     private int lighting = 0;
 
-    public Shaders(MinecraftClient mc) {
+    public Shaders(IlluminateClient ic, MinecraftClient mc) {
+        this.ic = ic;
         this.mc = mc;
     }
 
@@ -64,8 +70,8 @@ public final class Shaders {
     }
 
     private int loadShader(ResourceManager rm, String id) {
-        String vshs = this.readResource(rm, "shaders/%s.vert".formatted(id));
-        String fshs = this.readResource(rm, "shaders/%s.frag".formatted(id));
+        String vshs = this.readShader(rm, "shaders/%s.vert".formatted(id));
+        String fshs = this.readShader(rm, "shaders/%s.frag".formatted(id));
 
         int vsh = GlStateManager.glCreateShader(GL31.GL_VERTEX_SHADER);
         int fsh = GlStateManager.glCreateShader(GL31.GL_FRAGMENT_SHADER);
@@ -89,10 +95,10 @@ public final class Shaders {
 
             if (GlStateManager.glGetProgrami(prog, GL31.GL_LINK_STATUS) == GL11.GL_FALSE) {
                 var log = GlStateManager.glGetProgramInfoLog(prog, 32768);
-                System.out.printf("Failed to link program '%s'\n", id);
+                LOGGER.error("Failed to link program '{}'", id);
 
                 for (String line : (Iterable<String>) () -> log.lines().iterator()) {
-                    System.out.println(line);
+                    LOGGER.error("{}", line);
                 }
 
                 break;
@@ -101,6 +107,7 @@ public final class Shaders {
             GlStateManager.glDeleteShader(fsh);
             GlStateManager.glDeleteShader(vsh);
 
+            LOGGER.info("Loaded shader '{}' with id '{}'", id, prog);
             return prog;
         } while (false);
 
@@ -108,6 +115,8 @@ public final class Shaders {
         GlStateManager.glDeleteProgram(prog);
         GlStateManager.glDeleteShader(fsh);
         GlStateManager.glDeleteProgram(vsh);
+
+        LOGGER.error("Failed to load shader '{}'\n", id);
         return 0;
     }
 
@@ -116,10 +125,10 @@ public final class Shaders {
 
         if (GlStateManager.glGetShaderi(shader, GL31.GL_COMPILE_STATUS) == GL31.GL_FALSE) {
             var log = GlStateManager.glGetShaderInfoLog(shader, 32768);
-            System.out.printf("Failed to compile %s shader '%s'\n", type, id);
+            LOGGER.error("Failed to compile {} shader '{}'\n", type, id);
 
             for (String line : (Iterable<String>) () -> log.lines().iterator()) {
-                System.out.println(line);
+                LOGGER.error("{}", line);
             }
 
             return false;
@@ -128,13 +137,17 @@ public final class Shaders {
         return true;
     }
 
-    private String readResource(ResourceManager rm, String id) {
+    private String readShader(ResourceManager rm, String id) {
         try (BufferedReader r = rm.getResourceOrThrow(Illuminate.id(id)).getReader()) {
             StringBuilder sb = new StringBuilder();
             String buf;
 
             while ((buf = r.readLine()) != null) {
                 sb.append(buf).append('\n');
+
+                if (buf.startsWith("#version ")) {
+                    sb.append("#define MAX_LIGHTS ").append(this.ic.getMaxLights()).append('\n');
+                }
             }
 
             return sb.toString();

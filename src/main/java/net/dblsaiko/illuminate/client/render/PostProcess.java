@@ -2,10 +2,7 @@ package net.dblsaiko.illuminate.client.render;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.dblsaiko.illuminate.client.GameRendererExt;
-import net.dblsaiko.illuminate.client.IlluminateClient;
-import net.dblsaiko.illuminate.client.LightContainer;
-import net.dblsaiko.illuminate.client.MinecraftClientExt;
+import net.dblsaiko.illuminate.client.*;
 import net.dblsaiko.illuminate.client.api.Light;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
@@ -20,7 +17,6 @@ import org.joml.Vector3f;
 import org.joml.Vector3fc;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL31;
-import therealfarfetchd.illuminate.client.render.LightFramebuffer;
 import therealfarfetchd.illuminate.client.render.LightSource;
 
 import java.nio.FloatBuffer;

@@ -12,7 +12,7 @@
   },
   "entrypoints": {
     "main": [{ "adapter": "kotlin", "value": "therealfarfetchd.illuminate.Illuminate" }],
-    "client": [{ "adapter": "kotlin", "value": "therealfarfetchd.illuminate.client.IlluminateClient" }]
+    "client": ["net.dblsaiko.illuminate.client.IlluminateClient::initializeClient"]
   },
   "mixins": [
     "illuminate-mixins-client.json"

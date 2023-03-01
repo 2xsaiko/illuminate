@@ -8,7 +8,6 @@ import net.minecraft.registry.Registry
 import net.minecraft.util.Identifier
 import therealfarfetchd.illuminate.ModID
 import therealfarfetchd.illuminate.common.block.ProjectorBlock
-import therealfarfetchd.illuminate.common.util.ext.makeStack
 
 //object ItemGroups {
 //  val all = FabricItemGroupBuilder.create(Identifier(ModID, "all"))

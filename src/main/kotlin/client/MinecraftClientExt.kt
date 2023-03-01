@@ -1,14 +1,9 @@
 package therealfarfetchd.illuminate.client
 
+import net.dblsaiko.illuminate.client.MinecraftClientExt
 import net.minecraft.client.MinecraftClient
 import net.minecraft.client.gl.Framebuffer
 
-interface MinecraftClientExt {
-
-  fun setFramebuffer(fb: Framebuffer)
-
-}
-
 fun MinecraftClient.setFramebuffer(fb: Framebuffer) {
-  (this as MinecraftClientExt).setFramebuffer(fb)
+  MinecraftClientExt.from(this).setFramebuffer(fb)
 }

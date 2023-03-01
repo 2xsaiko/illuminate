@@ -13,7 +13,6 @@ import therealfarfetchd.illuminate.client.test.CreeperLight;
 
 @Mixin(CreeperEntity.class)
 public abstract class MixinCreeperEntity {
-
     @Unique
     private final CreeperEntity self = (CreeperEntity) (Object) this;
 
@@ -28,5 +27,4 @@ public abstract class MixinCreeperEntity {
             this.spawnedLight = true;
         }
     }
-
 }

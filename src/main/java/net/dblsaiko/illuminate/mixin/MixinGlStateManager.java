@@ -1,4 +1,4 @@
-package therealfarfetchd.illuminate.mixin;
+package net.dblsaiko.illuminate.mixin;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import org.spongepowered.asm.mixin.Mixin;

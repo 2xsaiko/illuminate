@@ -1,4 +1,4 @@
-package therealfarfetchd.illuminate.mixin.test;
+package net.dblsaiko.illuminate.test.mixin;
 
 import net.dblsaiko.illuminate.client.IlluminateClient;
 import net.dblsaiko.illuminate.test.CreeperLight;

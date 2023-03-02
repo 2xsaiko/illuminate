@@ -15,6 +15,7 @@
     "client": ["net.dblsaiko.illuminate.client.IlluminateClient::initializeClient"]
   },
   "mixins": [
-    "illuminate-mixins-client.json"
+    "illuminate-mixins.json",
+    "illuminate-test-mixins.json"
   ]
 }

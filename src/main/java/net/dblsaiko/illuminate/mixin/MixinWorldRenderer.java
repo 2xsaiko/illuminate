@@ -1,4 +1,4 @@
-package therealfarfetchd.illuminate.mixin;
+package net.dblsaiko.illuminate.mixin;
 
 import net.dblsaiko.illuminate.client.GameRendererExt;
 import net.minecraft.client.MinecraftClient;

@@ -1,4 +1,4 @@
-package therealfarfetchd.illuminate.mixin;
+package net.dblsaiko.illuminate.mixin;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.dblsaiko.illuminate.client.GameRendererExt;

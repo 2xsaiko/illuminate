@@ -125,12 +125,12 @@ public abstract class MixinGameRenderer implements GameRendererExt {
         return this.activeRenderLight == null ? MathHelper.lerp(delta, first, second) : 0f;
     }
 
-    @Redirect(method = "renderWorld(FJLnet/minecraft/client/util/math/MatrixStack;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/util/math/MatrixStack;multiply(Lorg/joml/Quaternionf;)V"))
-    private void multiply(MatrixStack matrixStack, Quaternionf quaternion) {
-        if (this.activeRenderLight != null) return;
-
-        matrixStack.multiply(quaternion);
-    }
+//    @Redirect(method = "renderWorld(FJLnet/minecraft/client/util/math/MatrixStack;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/util/math/MatrixStack;multiply(Lorg/joml/Quaternionf;)V"))
+//    private void multiply(MatrixStack matrixStack, Quaternionf quaternion) {
+//        if (this.activeRenderLight != null) return;
+//
+//        matrixStack.multiply(quaternion);
+//    }
 
     @Redirect(method = "renderWorld(FJLnet/minecraft/client/util/math/MatrixStack;)V", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;clear(IZ)V"))
     private void clear(int i, boolean bl) {

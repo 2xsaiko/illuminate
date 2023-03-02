@@ -3,12 +3,12 @@
   "package": "net.dblsaiko.illuminate.mixin",
   "compatibilityLevel": "JAVA_17",
   "client": [
-    "MixinClientPlayerEntity",
-    "MixinDebugHud",
-    "MixinGameRenderer",
-    "MixinGlStateManager",
-    "MixinMinecraftClient",
-    "MixinWorldRenderer"
+    "ClientPlayerEntityMixin",
+    "DebugHudMixin",
+    "GameRendererMixin",
+    "GlStateManagerMixin",
+    "MinecraftClientMixin",
+    "WorldRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

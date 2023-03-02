@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(WorldRenderer.class)
-public class MixinWorldRenderer {
+public class WorldRendererMixin {
     @Shadow
     @Final
     private MinecraftClient client;

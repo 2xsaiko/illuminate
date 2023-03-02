@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(DebugHud.class)
-public abstract class MixinDebugHud {
+public abstract class DebugHudMixin {
     @Shadow
     @Final
     private MinecraftClient client;

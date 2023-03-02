@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(CreeperEntity.class)
-public abstract class MixinCreeperEntity {
+public abstract class CreeperEntityMixin {
     @Unique
     private final CreeperEntity self = (CreeperEntity) (Object) this;
 

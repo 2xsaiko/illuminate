@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(ClientPlayerEntity.class)
-public abstract class MixinClientPlayerEntity {
+public abstract class ClientPlayerEntityMixin {
     @Shadow
     @Final
     protected MinecraftClient client;

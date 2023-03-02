@@ -4,6 +4,8 @@ import net.dblsaiko.illuminate.client.IlluminateClient;
 import net.dblsaiko.illuminate.client.api.Light;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
+import net.minecraft.util.Identifier;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
@@ -19,11 +21,13 @@ public class CreeperLight implements Light {
     }
 
     @Override
-    public int tex() {
-        return BlockLight.getTex();
+    @NotNull
+    public Identifier tex() {
+        return BlockLight.TEXTURE;
     }
 
     @Override
+    @NotNull
     public Vector3fc pos() {
         var pos = this.e.getCameraPosVec(this.delta);
         this.posBuf.set(pos.x, pos.y, pos.z);

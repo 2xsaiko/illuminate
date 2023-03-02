@@ -305,7 +305,7 @@ public class PostProcess {
     private void loadLight(int i, LightContainer l) {
         RenderSystem.activeTexture(GL31.GL_TEXTURE3 + 2 * i);
         RenderSystem.enableTexture();
-        RenderSystem.bindTexture(l.light().tex());
+        this.mc.getTextureManager().bindTexture(l.light().tex());
 
         RenderSystem.activeTexture(GL31.GL_TEXTURE4 + 2 * i);
         RenderSystem.enableTexture();

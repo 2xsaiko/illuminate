@@ -1,20 +1,19 @@
 package net.dblsaiko.illuminate.test;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.dblsaiko.illuminate.client.IlluminateClient;
 import net.dblsaiko.illuminate.client.api.Light;
 import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.texture.TextureManager;
 import net.minecraft.state.property.Properties;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
 public class BlockLight implements Light {
     private static final float Z_NEAR = (float) (Math.sqrt(2f) / 2);
+    public static final Identifier TEXTURE = IlluminateTest.id("textures/test.png");
 
     private final World world;
     private final BlockPos pos;
@@ -29,11 +28,13 @@ public class BlockLight implements Light {
     }
 
     @Override
-    public int tex() {
-        return getTex();
+    @NotNull
+    public Identifier tex() {
+        return TEXTURE;
     }
 
     @Override
+    @NotNull
     public Vector3fc pos() {
         this.posBuf.set(this.pos.getX() + 0.5f, this.pos.getY() + 0.5f, this.pos.getZ() + 0.5f);
         return this.posBuf;
@@ -74,14 +75,5 @@ public class BlockLight implements Light {
         }
 
         this.yaw = state.get(Properties.HORIZONTAL_FACING).asRotation();
-    }
-
-    public static int getTex() {
-        TextureManager tm = MinecraftClient.getInstance().getTextureManager();
-        Identifier id = IlluminateTest.id("textures/test.png");
-        tm.bindTexture(id);
-        RenderSystem.bindTexture(0);
-
-        return tm.getTexture(id).getGlId();
     }
 }

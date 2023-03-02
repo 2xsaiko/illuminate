@@ -1,5 +1,7 @@
 package net.dblsaiko.illuminate.client.api;
 
+import net.minecraft.util.Identifier;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3fc;
 
 /**
@@ -7,13 +9,15 @@ import org.joml.Vector3fc;
  */
 public interface Light {
     /**
-     * A GL texture ID representing the texture that should be projected.
+     * Identifier for the texture that should be projected.
      */
-    int tex();
+    @NotNull
+    Identifier tex();
 
     /**
      * Returns the origin point of the light.
      */
+    @NotNull
     Vector3fc pos();
 
     /**

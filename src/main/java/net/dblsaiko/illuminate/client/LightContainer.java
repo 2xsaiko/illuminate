@@ -80,7 +80,7 @@ public class LightContainer {
             this.mv.set(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
             this.mv.rotate(this.cachedRoll * DEG_TO_RAD, 0, 0, 1);
             this.mv.rotate(this.cachedPitch * DEG_TO_RAD, 1, 0, 0);
-            this.mv.rotate(this.cachedYaw * DEG_TO_RAD, 0, 1, 0);
+            this.mv.rotate((180 + this.cachedYaw) * DEG_TO_RAD, 0, 1, 0);
             this.mvDirty = false;
             this.mvpDirty = true;
         }

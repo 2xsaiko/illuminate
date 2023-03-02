@@ -40,7 +40,7 @@ class BlockLight(val bp: BlockPos) : Light {
       wait = false
     }
 
-    yaw = -state.get(Properties.HORIZONTAL_FACING).asRotation()
+    yaw = state.get(Properties.HORIZONTAL_FACING).asRotation()
   }
 
   companion object {

@@ -17,7 +17,7 @@ class CreeperLight(val e: CreeperEntity) : Light {
     return Vector3f(pos.x.toFloat(), pos.y.toFloat(), pos.z.toFloat())
   }
 
-  override fun yaw(): Float = -e.getYaw(delta) + 180f
+  override fun yaw(): Float = e.getYaw(delta)
 
   override fun pitch(): Float = e.getPitch(delta)
 

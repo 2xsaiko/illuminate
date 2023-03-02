@@ -5,7 +5,6 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Matrix4f;
-import therealfarfetchd.illuminate.client.GameRendererExtKt;
 
 public final class DrawDebug {
     private DrawDebug() {
@@ -15,7 +14,7 @@ public final class DrawDebug {
         var width = mc.getWindow().getScaledWidth();
         var height = mc.getWindow().getScaledHeight();
 
-        var pp = GameRendererExtKt.getPostProcess(mc.gameRenderer);
+        var pp = GameRendererExt.from(mc.gameRenderer).postProcess();
 
         var size = 64.0f;
         var dist = 8.0f;

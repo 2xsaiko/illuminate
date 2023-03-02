@@ -1,15 +1,15 @@
 package net.dblsaiko.illuminate.client;
 
+import net.dblsaiko.illuminate.Illuminate;
 import net.dblsaiko.illuminate.client.api.Light;
 import net.minecraft.entity.Entity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.world.World;
 import org.joml.Vector3fc;
-import therealfarfetchd.illuminate.Illuminate;
 
 public class LightSource extends Entity {
     public LightSource(World world, Light light) {
-        super(Illuminate.INSTANCE.getLightEntityType(), world);
+        super(Illuminate.instance().entityTypes.lightSourceType(), world);
 
         Vector3fc lightPos = light.pos();
         this.setPosition(lightPos.x(), lightPos.y(), lightPos.z());

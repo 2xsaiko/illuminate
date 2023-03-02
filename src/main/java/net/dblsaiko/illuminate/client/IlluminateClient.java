@@ -13,7 +13,7 @@ public class IlluminateClient {
 
     public final Shaders shaders;
 
-    public IlluminateClient(MinecraftClient mc) {
+    private IlluminateClient(MinecraftClient mc) {
         this.mc = mc;
         this.shaders = new Shaders(this, mc);
     }

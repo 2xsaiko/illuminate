@@ -4,18 +4,15 @@
   "name": "Illuminate",
   "description": "An API for Minecraft to allow for projecting images similar to real video projectors into the world.",
   "version": "1.0.0",
-  "side": "universal",
-  "dependencies": {
-  },
   "entrypoints": {
     "main": [
-      "net.dblsaiko.illuminate.test.IlluminateTest::initialize",
       "net.dblsaiko.illuminate.Illuminate::initialize"
     ],
-    "client": ["net.dblsaiko.illuminate.client.IlluminateClient::initializeClient"]
+    "client": [
+      "net.dblsaiko.illuminate.client.IlluminateClient::initializeClient"
+    ]
   },
   "mixins": [
-    "illuminate-mixins.json",
-    "illuminate-test-mixins.json"
+    "illuminate-mixins.json"
   ]
 }

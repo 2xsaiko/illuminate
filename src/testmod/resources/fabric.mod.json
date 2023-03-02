@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "illuminate-test",
+  "name": "Illuminate Test",
+  "description": "Test mod for Illuminate",
+  "version": "1.0.0",
+  "depends": {
+    "illuminate": "^1.0.0"
+  },
+  "entrypoints": {
+    "main": [
+      "net.dblsaiko.illuminate.test.IlluminateTest::initialize"
+    ]
+  },
+  "mixins": [
+    "illuminate-test-mixins.json"
+  ]
+}

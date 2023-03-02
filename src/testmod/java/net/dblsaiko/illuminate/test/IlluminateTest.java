@@ -1,7 +1,6 @@
 package net.dblsaiko.illuminate.test;
 
 import net.dblsaiko.illuminate.test.init.Blocks;
-import net.dblsaiko.illuminate.init.EntityTypes;
 import net.dblsaiko.illuminate.test.init.Items;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.NotNull;

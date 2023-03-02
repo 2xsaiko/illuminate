@@ -1,21 +1,10 @@
 plugins {
     id 'fabric-loom' version '1.1-SNAPSHOT'
-    id 'org.jetbrains.kotlin.jvm' version '1.8.20-Beta'
     id 'maven-publish'
 }
 
 sourceCompatibility = JavaVersion.VERSION_17
 targetCompatibility = JavaVersion.VERSION_17
-
-tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
-    kotlinOptions.jvmTarget = '17'
-    kotlinOptions.freeCompilerArgs += [
-        '-Xjvm-default=enable',
-        '-Xuse-experimental=kotlin.ExperimentalUnsignedTypes',
-        '-XXLanguage:+InlineClasses'
-    ]
-    kotlinOptions.javaParameters = true
-}
 
 archivesBaseName = project.archives_base_name
 version = project.mod_version
@@ -32,10 +21,6 @@ dependencies {
 
     // PSA: Some older mods, compiled on Loom 0.2.1, might have outdated Maven POMs.
     // You may need to force-disable transitiveness on them.
-
-    implementation(group: 'net.fabricmc', name: 'fabric-language-kotlin', version: fabric_kotlin_version) {
-        exclude module: 'fabric-loader'
-    }
 }
 
 processResources {

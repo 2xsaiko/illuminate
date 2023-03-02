@@ -6,9 +6,6 @@
   "version": "1.0.0",
   "side": "universal",
   "dependencies": {
-    "net.fabricmc.language.kotlin": {
-      "version": ">=1.3.10-8"
-    }
   },
   "entrypoints": {
     "main": [

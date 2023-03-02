@@ -8,7 +8,6 @@ import net.minecraft.registry.Registries
 import net.minecraft.registry.Registry
 import net.minecraft.util.Identifier
 import org.apache.logging.log4j.LogManager
-import therealfarfetchd.illuminate.client.render.LightSource
 import therealfarfetchd.illuminate.common.init.Blocks
 import therealfarfetchd.illuminate.common.init.Items
 

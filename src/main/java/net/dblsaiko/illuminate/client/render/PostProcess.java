@@ -79,10 +79,6 @@ public class PostProcess {
     private int blitFb() {
         if (this.blitFb == 0) {
             this.blitFb = GlStateManager.glGenFramebuffers();
-            // TODO: what was this needed for?
-            GlStateManager._glBindFramebuffer(GL31.GL_FRAMEBUFFER, this.blitFb);
-            GL31.glDrawBuffer(GL31.GL_NONE);
-            this.target.beginWrite(false);
         }
 
         return this.blitFb;

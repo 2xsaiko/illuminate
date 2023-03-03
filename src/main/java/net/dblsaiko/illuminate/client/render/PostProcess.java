@@ -12,6 +12,8 @@ import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.math.Vec3d;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
@@ -22,9 +24,7 @@ import java.nio.FloatBuffer;
 import java.util.*;
 
 public class PostProcess {
-    // Apple can suck my ass
-    // TODO: get max samplers from GL
-    private static final int CAM_LIMIT = MinecraftClient.IS_SYSTEM_MAC ? 7 : 10;
+    private static final Logger LOGGER = LogManager.getLogger(PostProcess.class);
 
     private static final FloatBuffer MAT_BUF = BufferUtils.createFloatBuffer(16);
 
@@ -37,10 +37,10 @@ public class PostProcess {
     private int uHeight = 0;
     private int uWorld = 0;
     private int uDepth = 0;
-    private final int[] uLightTex = new int[CAM_LIMIT];
-    private final int[] uLightDepth = new int[CAM_LIMIT];
-    private final int[] uLightCam = new int[CAM_LIMIT];
-    private final int[] uLightPos = new int[CAM_LIMIT];
+    private final int[] uLightTex;
+    private final int[] uLightDepth;
+    private final int[] uLightCam;
+    private final int[] uLightPos;
     private int uLightCount = 0;
 
     private final SimpleFramebuffer offscreenFb;
@@ -53,14 +53,34 @@ public class PostProcess {
     private final Set<LightContainer> activeLights = new HashSet<>();
     private final Set<LightContainer> activeLightsView = Collections.unmodifiableSet(this.activeLights);
 
+    private int maxLights = -1;
+
     public PostProcess(MinecraftClient mc) {
         this.mc = mc;
         this.target = mc.getFramebuffer();
         this.offscreenFb = new SimpleFramebuffer(this.target.viewportWidth, this.target.viewportHeight, true, MinecraftClient.IS_SYSTEM_MAC);
+
+        this.uLightTex = new int[this.getMaxLights()];
+        this.uLightDepth = new int[this.getMaxLights()];
+        this.uLightCam = new int[this.getMaxLights()];
+        this.uLightPos = new int[this.getMaxLights()];
     }
 
     public int getMaxLights() {
-        return CAM_LIMIT;
+        if (this.maxLights == -1) {
+            // Not sure whether this is the right property to query; there's none for fragment shaders which is where
+            // the textures actually get sampled but it seems to return the right value. The standard says this should
+            // be at least 16, so it isn't necessary to handle the case where this would calculate a maxLights value of
+            // 0 or lower.
+            // TODO: on machines with cards supporting a lot of active textures, maybe limit this value to some
+            //  reasonable value to prevent tanking performance too heavily
+            int maxTextures = GL31.glGetInteger(GL31.GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS);
+            this.maxLights = (maxTextures - 2) / 2;
+
+            LOGGER.info("Graphics driver supports a maximum of {} textures, using {} lights", maxTextures, this.maxLights);
+        }
+
+        return this.maxLights;
     }
 
     public int playerCamDepthTex() {
@@ -114,7 +134,7 @@ public class PostProcess {
             this.uWorld = GlStateManager._glGetUniformLocation(shader, "world");
             this.uDepth = GlStateManager._glGetUniformLocation(shader, "depth");
 
-            for (int i = 0; i < CAM_LIMIT; i += 1) {
+            for (int i = 0; i < this.getMaxLights(); i += 1) {
                 this.uLightTex[i] = GlStateManager._glGetUniformLocation(shader, "lightTex[%d]".formatted(i));
                 this.uLightDepth[i] = GlStateManager._glGetUniformLocation(shader, "lightDepth[%d]".formatted(i));
                 this.uLightCam[i] = GlStateManager._glGetUniformLocation(shader, "lightCam[%d]".formatted(i));
@@ -133,7 +153,7 @@ public class PostProcess {
     public void setupLights(float delta) {
         this.activeLights.clear();
 
-        if (this.lights.size() < CAM_LIMIT) {
+        if (this.lights.size() < this.getMaxLights()) {
             this.activeLights.addAll(this.lights.values());
             return;
         }
@@ -142,7 +162,7 @@ public class PostProcess {
         this.lights.values()
                 .stream()
                 .sorted(Comparator.comparingDouble(el -> el.light().pos().sub(camPos, new Vector3f()).lengthSquared()))
-                .limit(CAM_LIMIT)
+                .limit(this.getMaxLights())
                 .forEach(this.activeLights::add);
     }
 

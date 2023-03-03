@@ -114,7 +114,14 @@ public class PostProcess {
     }
 
     public boolean removeLight(Light light) {
-        return this.lights.remove(light) != null;
+        LightContainer lc = this.lights.remove(light);
+
+        if (lc != null) {
+            lc.destroy();
+            return true;
+        }
+
+        return false;
     }
 
     public Set<LightContainer> activeLights() {

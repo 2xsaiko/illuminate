@@ -45,9 +45,9 @@ public class PostProcess {
 
     private final SimpleFramebuffer offscreenFb;
     private final LightFramebuffer lightDepthFb = new LightFramebuffer(1024, 1024, MinecraftClient.IS_SYSTEM_MAC);
-    private final int blitFb;
+    private int blitFb;
 
-    private final int playerCamDepthTex;
+    private int playerCamDepthTex;
 
     private final Map<Light, LightContainer> lights = new HashMap<>();
     private final Set<LightContainer> activeLights = new HashSet<>();
@@ -57,21 +57,6 @@ public class PostProcess {
         this.mc = mc;
         this.target = mc.getFramebuffer();
         this.offscreenFb = new SimpleFramebuffer(this.target.viewportWidth, this.target.viewportHeight, true, MinecraftClient.IS_SYSTEM_MAC);
-
-        // FIXME: do this on first use, not in the constructor
-        this.playerCamDepthTex = GlStateManager._genTexture();
-        RenderSystem.bindTexture(this.playerCamDepthTex);
-        RenderSystem.texParameter(GL31.GL_TEXTURE_2D, GL31.GL_TEXTURE_MAG_FILTER, GL31.GL_NEAREST);
-        RenderSystem.texParameter(GL31.GL_TEXTURE_2D, GL31.GL_TEXTURE_MIN_FILTER, GL31.GL_NEAREST);
-        RenderSystem.texParameter(GL31.GL_TEXTURE_2D, GL31.GL_TEXTURE_WRAP_S, GL31.GL_CLAMP_TO_EDGE);
-        RenderSystem.texParameter(GL31.GL_TEXTURE_2D, GL31.GL_TEXTURE_WRAP_T, GL31.GL_CLAMP_TO_EDGE);
-
-        // FIXME: do this on first use, not in the constructor
-        this.blitFb = GlStateManager.glGenFramebuffers();
-        // TODO: what was this needed for?
-        GlStateManager._glBindFramebuffer(GL31.GL_FRAMEBUFFER, this.blitFb);
-        GL31.glDrawBuffer(GL31.GL_NONE);
-        this.target.beginWrite(false);
     }
 
     public int getMaxLights() {
@@ -79,7 +64,28 @@ public class PostProcess {
     }
 
     public int playerCamDepthTex() {
+        if (this.playerCamDepthTex == 0) {
+            this.playerCamDepthTex = GlStateManager._genTexture();
+            RenderSystem.bindTexture(this.playerCamDepthTex);
+            RenderSystem.texParameter(GL31.GL_TEXTURE_2D, GL31.GL_TEXTURE_MAG_FILTER, GL31.GL_NEAREST);
+            RenderSystem.texParameter(GL31.GL_TEXTURE_2D, GL31.GL_TEXTURE_MIN_FILTER, GL31.GL_NEAREST);
+            RenderSystem.texParameter(GL31.GL_TEXTURE_2D, GL31.GL_TEXTURE_WRAP_S, GL31.GL_CLAMP_TO_EDGE);
+            RenderSystem.texParameter(GL31.GL_TEXTURE_2D, GL31.GL_TEXTURE_WRAP_T, GL31.GL_CLAMP_TO_EDGE);
+        }
+
         return this.playerCamDepthTex;
+    }
+
+    private int blitFb() {
+        if (this.blitFb == 0) {
+            this.blitFb = GlStateManager.glGenFramebuffers();
+            // TODO: what was this needed for?
+            GlStateManager._glBindFramebuffer(GL31.GL_FRAMEBUFFER, this.blitFb);
+            GL31.glDrawBuffer(GL31.GL_NONE);
+            this.target.beginWrite(false);
+        }
+
+        return this.blitFb;
     }
 
     public boolean addLight(Light light) {
@@ -214,7 +220,7 @@ public class PostProcess {
         Camera camera = this.mc.gameRenderer.getCamera();
         Vec3d cameraPos = camera.getPos();
 
-        this.blitDepthToTex(this.target, this.playerCamDepthTex);
+        this.blitDepthToTex(this.target, this.playerCamDepthTex());
 
         RenderSystem.clear(GL31.GL_DEPTH_BUFFER_BIT, MinecraftClient.IS_SYSTEM_MAC);
 
@@ -247,7 +253,7 @@ public class PostProcess {
 
         RenderSystem.activeTexture(GL31.GL_TEXTURE2);
         RenderSystem.enableTexture();
-        RenderSystem.bindTexture(this.playerCamDepthTex);
+        RenderSystem.bindTexture(this.playerCamDepthTex());
         RenderSystem.glUniform1i(this.uDepth, 2);
         RenderSystem.activeTexture(GL31.GL_TEXTURE0);
 
@@ -356,7 +362,7 @@ public class PostProcess {
                 0
         );
 
-        GlStateManager._glBindFramebuffer(GL31.GL_DRAW_FRAMEBUFFER, this.blitFb);
+        GlStateManager._glBindFramebuffer(GL31.GL_DRAW_FRAMEBUFFER, this.blitFb());
         GlStateManager._glFramebufferTexture2D(
                 GL31.GL_DRAW_FRAMEBUFFER,
                 GL31.GL_DEPTH_ATTACHMENT,
@@ -386,10 +392,18 @@ public class PostProcess {
     }
 
     public void destroy() {
-        RenderSystem.deleteTexture(this.playerCamDepthTex);
+        if (this.playerCamDepthTex != 0) {
+            RenderSystem.deleteTexture(this.playerCamDepthTex);
+            this.playerCamDepthTex = 0;
+        }
+
+        if (this.blitFb != 0) {
+            GlStateManager._glDeleteFramebuffers(this.blitFb);
+            this.blitFb = 0;
+        }
+
         this.offscreenFb.delete();
         this.lightDepthFb.delete();
-        GlStateManager._glDeleteFramebuffers(this.blitFb);
         this.lights.values().forEach(LightContainer::destroy);
         this.lights.clear();
     }

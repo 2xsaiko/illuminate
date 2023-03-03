@@ -263,6 +263,7 @@ public class PostProcess {
         RenderSystem.glUniform1i(this.uWidth, from.textureWidth);
         RenderSystem.glUniform1i(this.uHeight, from.textureHeight);
 
+        RenderSystem.activeTexture(GL31.GL_TEXTURE0);
         RenderSystem.enableTexture();
         from.beginRead();
         RenderSystem.glUniform1i(this.uWorld, 0);

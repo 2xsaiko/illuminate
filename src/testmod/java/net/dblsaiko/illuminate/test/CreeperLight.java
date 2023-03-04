@@ -23,7 +23,7 @@ public class CreeperLight implements Light {
     @Override
     @NotNull
     public Identifier tex() {
-        return BlockLight.TEXTURE;
+        return ProjectorBlockLight.TEXTURE;
     }
 
     @Override

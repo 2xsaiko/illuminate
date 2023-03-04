@@ -1,7 +1,7 @@
 package net.dblsaiko.illuminate.test.block;
 
 import net.dblsaiko.illuminate.client.IlluminateClient;
-import net.dblsaiko.illuminate.test.BlockLight;
+import net.dblsaiko.illuminate.test.ProjectorBlockLight;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
@@ -25,7 +25,7 @@ public class ProjectorBlock extends Block {
         // restore the light when reloading the world.
         // However, this is just a test mod so it's good enough.
         MinecraftClient.getInstance().execute(() -> {
-            IlluminateClient.instance().addLight(new BlockLight(world, pos));
+            IlluminateClient.instance().addLight(new ProjectorBlockLight(world, pos));
         });
     }
 

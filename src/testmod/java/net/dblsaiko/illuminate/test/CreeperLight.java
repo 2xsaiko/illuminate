@@ -50,11 +50,14 @@ public class CreeperLight implements Light {
     }
 
     @Override
-    public void prepare(float delta) {
+    public boolean prepare(float delta) {
         this.delta = delta;
 
         if (this.e.isRemoved() || this.e.world != MinecraftClient.getInstance().world) {
             IlluminateClient.instance().removeLight(this);
+            return false;
         }
+
+        return true;
     }
 }

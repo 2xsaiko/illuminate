@@ -61,7 +61,7 @@ public class BlockLight implements Light {
     }
 
     @Override
-    public void prepare(float delta) {
+    public boolean prepare(float delta) {
         BlockState state = this.world.getBlockState(this.pos);
 
         if (state.getBlock() != IlluminateTest.instance().blocks.projector) {
@@ -69,11 +69,12 @@ public class BlockLight implements Light {
                 IlluminateClient.instance().removeLight(this);
             }
 
-            return;
+            return false;
         } else {
             this.wait = false;
         }
 
         this.yaw = state.get(Properties.HORIZONTAL_FACING).asRotation();
+        return true;
     }
 }

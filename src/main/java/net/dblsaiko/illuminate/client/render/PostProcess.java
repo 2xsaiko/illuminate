@@ -193,12 +193,15 @@ public class PostProcess {
         this.mc.options.setPerspective(Perspective.FIRST_PERSON);
 
         for (LightContainer lc : this.activeLights) {
+            if (!lc.light().prepare(delta)) {
+                continue;
+            }
+
             this.lightDepthFb.beginWrite(true);
             RenderSystem.clear(GL31.GL_DEPTH_BUFFER_BIT | GL31.GL_COLOR_BUFFER_BIT, MinecraftClient.IS_SYSTEM_MAC);
             MinecraftClientExt.from(this.mc).setFramebuffer(this.lightDepthFb);
 
             mv.push();
-            lc.light().prepare(delta);
 
             // this.setupCamera(lc);
 

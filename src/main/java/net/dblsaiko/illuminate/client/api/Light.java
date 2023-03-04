@@ -70,6 +70,7 @@ public interface Light {
     /**
      * Prepare the light for rendering. This gets called before the world gets drawn from the light's perspective.
      */
-    default void prepare(float delta) {
+    default boolean prepare(float delta) {
+        return true;
     }
 }

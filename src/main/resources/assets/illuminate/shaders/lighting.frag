@@ -104,7 +104,7 @@ void main() {
         // buffer, intensity adjusted based on angle of impact and distance from the light.
         if (isInBox(lightCamCoords) && lightCamCoords.z <= ld + 0.001) {
             vec4 texColor = texture(lightTex[i], texCoords * vec2(1, -1));
-            combinedLightColor += vec3(texColor.xyz * texColor.w * lmul * inversesqrt(dist));
+            combinedLightColor += vec3(texColor.xyz * texColor.w * 8 * lmul * (1 / (dist * dist)));
         }
     }
 

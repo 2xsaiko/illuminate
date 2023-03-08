@@ -54,6 +54,13 @@ public interface Light {
     }
 
     /**
+     * Returns the brightness of the light.
+     */
+    default float brightness() {
+        return 32f;
+    }
+
+    /**
      * Returns the distance of the near clip plane of the projection from the origin.
      */
     default float near() {

@@ -3,7 +3,8 @@
   "package": "net.dblsaiko.illuminate.test.mixin",
   "compatibilityLevel": "JAVA_17",
   "client": [
-    "CreeperEntityMixin"
+    "CreeperEntityMixin",
+    "PlayerEntityMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -46,7 +46,7 @@ public class IlluminateClient {
     }
 
     public int getMaxLights() {
-        return GameRendererExt.from(this.mc.gameRenderer).postProcess().getMaxLights();
+        return GameRendererExt.from(this.mc.gameRenderer).postProcess().getMaxTextures();
     }
 
     public void onJoinWorld() {

@@ -11,6 +11,7 @@ import net.minecraft.client.option.Perspective;
 import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,6 +38,7 @@ public class PostProcess {
     private int uHeight = 0;
     private int uWorld = 0;
     private int uDepth = 0;
+    private final int[] uTexTable;
     private final int[] uLightTex;
     private final int[] uLightDepth;
     private final int[] uLightCam;
@@ -53,34 +55,35 @@ public class PostProcess {
     private final Set<LightContainer> activeLights = new HashSet<>();
     private final Set<LightContainer> activeLightsView = Collections.unmodifiableSet(this.activeLights);
 
-    private int maxLights = -1;
+    private int maxTextures = -1;
 
     public PostProcess(MinecraftClient mc) {
         this.mc = mc;
         this.target = mc.getFramebuffer();
         this.offscreenFb = new SimpleFramebuffer(this.target.viewportWidth, this.target.viewportHeight, true, MinecraftClient.IS_SYSTEM_MAC);
 
-        this.uLightTex = new int[this.getMaxLights()];
-        this.uLightDepth = new int[this.getMaxLights()];
-        this.uLightCam = new int[this.getMaxLights()];
-        this.uLightPos = new int[this.getMaxLights()];
+        this.uTexTable = new int[this.getMaxTextures()];
+        this.uLightTex = new int[this.getMaxTextures()];
+        this.uLightDepth = new int[this.getMaxTextures()];
+        this.uLightCam = new int[this.getMaxTextures()];
+        this.uLightPos = new int[this.getMaxTextures()];
     }
 
-    public int getMaxLights() {
-        if (this.maxLights == -1) {
-            // Not sure whether this is the right property to query; there's none for fragment shaders which is where
-            // the textures actually get sampled but it seems to return the right value. The standard says this should
-            // be at least 16, so it isn't necessary to handle the case where this would calculate a maxLights value of
-            // 0 or lower.
-            // TODO: on machines with cards supporting a lot of active textures, maybe limit this value to some
-            //  reasonable value to prevent tanking performance too heavily
+    public int getMaxTextures() {
+        if (this.maxTextures == -1) {
+            // Not sure whether this is the right property to query; there's
+            // none for fragment shaders which is where the textures actually
+            // get sampled, but it seems to return the right value. The standard
+            // says this should be at least 16, so it isn't necessary to handle
+            // the case where this would calculate a maxTextures value of 0 or
+            // lower.
             int maxTextures = GL31.glGetInteger(GL31.GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS);
-            this.maxLights = (maxTextures - 2) / 2;
+            this.maxTextures = maxTextures - 2;
 
-            LOGGER.info("Graphics driver supports a maximum of {} textures, using {} lights", maxTextures, this.maxLights);
+            LOGGER.info("Graphics driver supports a maximum of {} textures, using a maximum of {} for lights", maxTextures, this.maxTextures);
         }
 
-        return this.maxLights;
+        return this.maxTextures;
     }
 
     public int playerCamDepthTex() {
@@ -141,11 +144,15 @@ public class PostProcess {
             this.uWorld = GlStateManager._glGetUniformLocation(shader, "world");
             this.uDepth = GlStateManager._glGetUniformLocation(shader, "depth");
 
-            for (int i = 0; i < this.getMaxLights(); i += 1) {
+            for (int i = 0; i < this.getMaxTextures(); i += 1) {
+                this.uTexTable[i] = GlStateManager._glGetUniformLocation(shader, "texTable[%d]".formatted(i));
                 this.uLightTex[i] = GlStateManager._glGetUniformLocation(shader, "lightTex[%d]".formatted(i));
                 this.uLightDepth[i] = GlStateManager._glGetUniformLocation(shader, "lightDepth[%d]".formatted(i));
                 this.uLightCam[i] = GlStateManager._glGetUniformLocation(shader, "lightCam[%d]".formatted(i));
                 this.uLightPos[i] = GlStateManager._glGetUniformLocation(shader, "lightPos[%d]".formatted(i));
+
+                // These always have the same values, so set it here
+                RenderSystem.glUniform1i(this.uTexTable[i], 3 + i);
             }
 
             this.uLightCount = GlStateManager._glGetUniformLocation(shader, "lightCount");
@@ -160,17 +167,24 @@ public class PostProcess {
     public void setupLights(float delta) {
         this.activeLights.clear();
 
-        if (this.lights.size() < this.getMaxLights()) {
-            this.activeLights.addAll(this.lights.values());
-            return;
-        }
-
         Vector3f camPos = this.mc.gameRenderer.getCamera().getPos().toVector3f();
-        this.lights.values()
-                .stream()
-                .sorted(Comparator.comparingDouble(el -> el.light().pos().sub(camPos, new Vector3f()).lengthSquared()))
-                .limit(this.getMaxLights())
-                .forEach(this.activeLights::add);
+
+        var closestLights = new ArrayList<>(this.lights.values());
+        closestLights.sort(Comparator.comparingDouble(el -> el.light().pos().sub(camPos, new Vector3f()).lengthSquared()));
+
+        var usedTex = new HashSet<Identifier>();
+
+        for (var light : closestLights) {
+            usedTex.add(light.light().tex());
+
+            // we need 1 texture ID for each distinct light texture + 1 texture
+            // ID for each light's depth buffer
+            if (usedTex.size() + this.activeLights.size() + 1 > this.getMaxTextures()) {
+                break;
+            }
+
+            this.activeLights.add(light);
+        }
     }
 
     /**
@@ -202,8 +216,6 @@ public class PostProcess {
             MinecraftClientExt.from(this.mc).setFramebuffer(this.lightDepthFb);
 
             mv.push();
-
-            // this.setupCamera(lc);
 
             var lightSource = new LightSource(Objects.requireNonNull(this.mc.world), lc.light());
             this.mc.cameraEntity = lightSource;
@@ -284,16 +296,13 @@ public class PostProcess {
         RenderSystem.glUniform1i(this.uDepth, 2);
         RenderSystem.activeTexture(GL31.GL_TEXTURE0);
 
-        {
-            int i = 0;
+        var state = new LoadLightState();
 
-            for (LightContainer l : this.activeLights) {
-                this.loadLight(i, l);
-                i += 1;
-            }
-
-            RenderSystem.glUniform1i(this.uLightCount, i);
+        for (LightContainer l : this.activeLights) {
+            this.loadLight(state, l);
         }
+
+        RenderSystem.glUniform1i(this.uLightCount, state.lightCount);
 
         MAT_BUF.clear();
         ortho(0f, into.textureWidth, into.textureHeight, 0f, -1f, 1f).get(MAT_BUF);
@@ -327,33 +336,55 @@ public class PostProcess {
 
         from.endRead();
 
-        for (int i = 2; i < 3 + this.activeLights.size() * 2; i += 1) {
-            RenderSystem.activeTexture(GL31.GL_TEXTURE0 + i);
+        for (int i = 0; i < state.nextTexture; i += 1) {
+            RenderSystem.activeTexture(GL31.GL_TEXTURE3 + i);
             RenderSystem.disableTexture();
         }
 
         RenderSystem.activeTexture(GL31.GL_TEXTURE0);
     }
 
-    private void loadLight(int i, LightContainer l) {
-        RenderSystem.activeTexture(GL31.GL_TEXTURE3 + 2 * i);
-        RenderSystem.enableTexture();
-        this.mc.getTextureManager().bindTexture(l.light().tex());
+    private final class LoadLightState {
+        int nextTexture = 0;
+        int lightCount = 0;
+        Identifier[] usedTextures = new Identifier[PostProcess.this.getMaxTextures()];
+    }
 
-        RenderSystem.activeTexture(GL31.GL_TEXTURE4 + 2 * i);
+    private void loadLight(LoadLightState state, LightContainer l) {
+        int color;
+
+        for (color = 0; color < state.nextTexture; color += 1) {
+            if (l.light().tex().equals(state.usedTextures[color])) {
+                break;
+            }
+        }
+
+        if (color == state.nextTexture) {
+            RenderSystem.activeTexture(GL31.GL_TEXTURE3 + color);
+            RenderSystem.enableTexture();
+            this.mc.getTextureManager().bindTexture(l.light().tex());
+            state.usedTextures[color] = l.light().tex();
+            state.nextTexture += 1;
+        }
+
+        int depth = state.nextTexture;
+        RenderSystem.activeTexture(GL31.GL_TEXTURE3 + depth);
         RenderSystem.enableTexture();
         RenderSystem.bindTexture(l.depthTex());
+        state.nextTexture += 1;
 
-        RenderSystem.glUniform1i(this.uLightTex[i], 3 + 2 * i);
-        RenderSystem.glUniform1i(this.uLightDepth[i], 4 + 2 * i);
+        RenderSystem.glUniform1i(this.uLightTex[state.lightCount], color);
+        RenderSystem.glUniform1i(this.uLightDepth[state.lightCount], depth);
 
         MAT_BUF.clear();
         l.mvp().get(MAT_BUF);
         MAT_BUF.rewind();
-        RenderSystem.glUniformMatrix4(this.uLightCam[i], false, MAT_BUF);
+        RenderSystem.glUniformMatrix4(this.uLightCam[state.lightCount], false, MAT_BUF);
 
         Vector3fc lightPos = l.light().pos();
-        GL31.glUniform3f(this.uLightPos[i], lightPos.x(), lightPos.y(), lightPos.z());
+        GL31.glUniform3f(this.uLightPos[state.lightCount], lightPos.x(), lightPos.y(), lightPos.z());
+
+        state.lightCount += 1;
     }
 
     private void blit(Framebuffer from, Framebuffer into) {

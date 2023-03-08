@@ -7,10 +7,12 @@ uniform int height;
 uniform sampler2D world;
 uniform sampler2D depth;
 
+uniform sampler2D[MAX_LIGHTS] texTable;
+
 // Lights' projected texture, depth buffer, MVP matrix and position.
 // MAX_LIGHTS defined based on what the graphics driver supports. See Shaders::readShader.
-uniform sampler2D[MAX_LIGHTS] lightTex;
-uniform sampler2D[MAX_LIGHTS] lightDepth;
+uniform int[MAX_LIGHTS] lightTex;
+uniform int[MAX_LIGHTS] lightDepth;
 uniform mat4[MAX_LIGHTS] lightCam;
 uniform vec3[MAX_LIGHTS] lightPos;
 
@@ -97,13 +99,13 @@ void main() {
         vec2 texCoords = tex.xy / tex.w;
 
         // The distance of what the light actually sees on the line between its near/far plane going through
-        float ld = texture(lightDepth[i], texCoords).x * 2 - 1;
+        float ld = texture(texTable[lightDepth[i]], texCoords).x * 2 - 1;
 
         // If these coordinates could be seen from the light's perspective (it is inside its clip bounds and there's
         // nothing in front of it based on the value in the depth buffer), add the color from our light texture to the \
         // buffer, intensity adjusted based on angle of impact and distance from the light.
         if (isInBox(lightCamCoords) && lightCamCoords.z <= ld + 0.001) {
-            vec4 texColor = texture(lightTex[i], texCoords * vec2(1, -1));
+            vec4 texColor = texture(texTable[lightTex[i]], texCoords * vec2(1, -1));
             combinedLightColor += vec3(texColor.xyz * texColor.w * 8 * lmul * (1 / (dist * dist)));
         }
     }

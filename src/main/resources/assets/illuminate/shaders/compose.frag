@@ -11,5 +11,5 @@ void main() {
     vec4 world = texture(worldTex, f_uv);
     vec4 light = texture(lightTex, f_uv);
 
-    color = world + light;
+    color = world + world * light;
 }

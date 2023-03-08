@@ -18,6 +18,7 @@ uniform int[MAX_LIGHTS] lightTex;
 uniform int[MAX_LIGHTS] lightDepth;
 uniform mat4[MAX_LIGHTS] lightCam;
 uniform vec3[MAX_LIGHTS] lightPos;
+uniform float[MAX_LIGHTS] lightBrightness;
 
 // The current amount of lights. Less or equal to MAX_LIGHTS.
 uniform int lightCount;
@@ -107,7 +108,7 @@ void main() {
         // buffer, intensity adjusted based on angle of impact and distance from the light.
         if (isInBox(lightCamCoords) && lightCamCoords.z <= ld + 0.001) {
             vec4 texColor = texture(texTable[lightTex[i]], texCoords * vec2(1, -1));
-            accumFrag += vec3(texColor.xyz * texColor.w * 8 * lmul * (1 / (dist * dist)));
+            accumFrag += vec3(texColor.xyz * texColor.w * lightBrightness[i] * lmul * (1 / pow(dist, 1.5)));
         }
     }
 

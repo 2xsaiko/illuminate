@@ -371,6 +371,8 @@ public class PostProcess {
         Vector3fc lightPos = l.light().pos();
         GL31.glUniform3f(shader.lightPos.index(state.lightCount), lightPos.x(), lightPos.y(), lightPos.z());
 
+        GL31.glUniform1f(shader.lightBrightness.index(state.lightCount), l.light().brightness());
+
         state.lightCount += 1;
 
         return true;

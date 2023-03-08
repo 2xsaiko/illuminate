@@ -10,7 +10,7 @@ import net.minecraft.registry.Registry;
 
 public final class Blocks {
     public final ProjectorBlock projector = new ProjectorBlock(AbstractBlock.Settings.of(Material.METAL));
-    public final LightBlock light = new LightBlock(AbstractBlock.Settings.of(Material.WOOL).luminance(s -> 15));
+    public final LightBlock light = new LightBlock(AbstractBlock.Settings.of(Material.WOOL));
 
     public void register() {
         Registry.register(Registries.BLOCK, IlluminateTest.id("projector"), this.projector);

@@ -25,7 +25,7 @@ public final class Shaders {
     private final IlluminateClient ic;
     private final MinecraftClient mc;
 
-    private int lighting = 0;
+    private LightingShader lighting;
 
     public Shaders(IlluminateClient ic, MinecraftClient mc) {
         this.ic = ic;
@@ -55,16 +55,21 @@ public final class Shaders {
         });
     }
 
-    public int lighting() {
+    public LightingShader lighting() {
         return this.lighting;
     }
 
     private void reloadShaders(ResourceManager rm) {
-        if (this.lighting != 0) {
-            GlStateManager.glDeleteProgram(this.lighting);
+        if (this.lighting != null) {
+            GlStateManager.glDeleteProgram(this.lighting.id());
         }
 
-        this.lighting = this.loadShader(rm, "lighting");
+        int lighting = this.loadShader(rm, "lighting");
+
+        if (lighting != 0) {
+            this.lighting = new LightingShader(lighting);
+            this.lighting.setup();
+        }
 
         GameRendererExt.from(this.mc.gameRenderer).postProcess().onShaderReload();
     }

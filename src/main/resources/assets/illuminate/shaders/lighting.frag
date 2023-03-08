@@ -3,8 +3,11 @@
 uniform int width;
 uniform int height;
 
-// Player camera's color and depth buffer.
-uniform sampler2D world;
+// The accumulator buffer, contains previous output of this shader in case
+// multiple passes are necessary.
+uniform sampler2D accum;
+
+// Player camera's depth buffer.
 uniform sampler2D depth;
 
 uniform sampler2D[MAX_LIGHTS] texTable;
@@ -76,9 +79,7 @@ void main() {
     vec3 worldCoords = toWorldCoords(f_uv);
 
     // The color of this fragment in the current screen buffer.
-    vec3 rgb = texture(world, f_uv).xyz;
-
-    vec3 combinedLightColor = vec3(0);
+    vec3 accumFrag = texture(accum, f_uv).xyz;
 
     // The (world-space) normal vector of the current fragment.
     vec3 normal = getNormal(f_uv);
@@ -106,9 +107,9 @@ void main() {
         // buffer, intensity adjusted based on angle of impact and distance from the light.
         if (isInBox(lightCamCoords) && lightCamCoords.z <= ld + 0.001) {
             vec4 texColor = texture(texTable[lightTex[i]], texCoords * vec2(1, -1));
-            combinedLightColor += vec3(texColor.xyz * texColor.w * 8 * lmul * (1 / (dist * dist)));
+            accumFrag += vec3(texColor.xyz * texColor.w * 8 * lmul * (1 / (dist * dist)));
         }
     }
 
-    color = vec4(rgb + combinedLightColor.xyz, 1);
+    color = vec4(accumFrag, 1);
 }

@@ -16,7 +16,6 @@ import net.minecraft.util.math.Vec3d;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.joml.Matrix4f;
-import org.joml.Vector3f;
 import org.joml.Vector3fc;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL31;
@@ -167,24 +166,7 @@ public class PostProcess {
     public void setupLights(float delta) {
         this.activeLights.clear();
 
-        Vector3f camPos = this.mc.gameRenderer.getCamera().getPos().toVector3f();
-
-        var closestLights = new ArrayList<>(this.lights.values());
-        closestLights.sort(Comparator.comparingDouble(el -> el.light().pos().sub(camPos, new Vector3f()).lengthSquared()));
-
-        var usedTex = new HashSet<Identifier>();
-
-        for (var light : closestLights) {
-            usedTex.add(light.light().tex());
-
-            // we need 1 texture ID for each distinct light texture + 1 texture
-            // ID for each light's depth buffer
-            if (usedTex.size() + this.activeLights.size() + 1 > this.getMaxTextures()) {
-                break;
-            }
-
-            this.activeLights.add(light);
-        }
+        this.activeLights.addAll(this.lights.values());
     }
 
     /**
@@ -264,14 +246,16 @@ public class PostProcess {
 
         mv.push();
         mv.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
-        this.paintSurfaces(this.target, this.offscreenFb, mv.peek().getPositionMatrix(), p.peek().getPositionMatrix());
+        var fb = this.paintSurfaces(this.target, mv.peek().getPositionMatrix(), p.peek().getPositionMatrix());
         mv.pop();
-        this.blit(this.offscreenFb, this.target);
+        this.blit(fb, this.target);
 
         this.target.beginWrite(true);
     }
 
-    private void paintSurfaces(Framebuffer from, Framebuffer into, Matrix4f mv, Matrix4f p) {
+    private Framebuffer paintSurfaces(Framebuffer from, Matrix4f mv, Matrix4f p) {
+        Framebuffer into = this.offscreenFb;
+
         int shader = IlluminateClient.instance().shaders.lighting();
 
         if (shader == 0) {
@@ -282,32 +266,10 @@ public class PostProcess {
 
         GlStateManager._glUseProgram(shader);
 
-        RenderSystem.glUniform1i(this.uWidth, from.textureWidth);
-        RenderSystem.glUniform1i(this.uHeight, from.textureHeight);
-
-        RenderSystem.activeTexture(GL31.GL_TEXTURE0);
-        RenderSystem.enableTexture();
-        from.beginRead();
-        RenderSystem.glUniform1i(this.uWorld, 0);
-
         RenderSystem.activeTexture(GL31.GL_TEXTURE2);
         RenderSystem.enableTexture();
         RenderSystem.bindTexture(this.playerCamDepthTex());
         RenderSystem.glUniform1i(this.uDepth, 2);
-        RenderSystem.activeTexture(GL31.GL_TEXTURE0);
-
-        var state = new LoadLightState();
-
-        for (LightContainer l : this.activeLights) {
-            this.loadLight(state, l);
-        }
-
-        RenderSystem.glUniform1i(this.uLightCount, state.lightCount);
-
-        MAT_BUF.clear();
-        ortho(0f, into.textureWidth, into.textureHeight, 0f, -1f, 1f).get(MAT_BUF);
-        MAT_BUF.rewind();
-        RenderSystem.glUniformMatrix4(this.uMvp, true, MAT_BUF);
 
         MAT_BUF.clear();
         var mvp = p.mul(mv, new Matrix4f());
@@ -316,8 +278,53 @@ public class PostProcess {
         MAT_BUF.rewind();
         RenderSystem.glUniformMatrix4(this.uCamInv, false, MAT_BUF);
 
+        var state = new LoadLightState();
+
+        for (LightContainer l : this.activeLights) {
+            if (!this.loadLight(state, l)) {
+                this.paintSurfacesPartial(from, into, mv, p, state);
+
+                var tmp = from;
+                from = into;
+                into = tmp;
+                state = new LoadLightState();
+
+                if (!this.loadLight(state, l)) {
+                    throw new IllegalStateException("can't add light after drawing!");
+                }
+            }
+        }
+
+        if (state.lightCount > 0) {
+            this.paintSurfacesPartial(from, into, mv, p, state);
+        }
+
+        GlStateManager._glUseProgram(0);
+
+        RenderSystem.activeTexture(GL31.GL_TEXTURE0);
+
+        return into;
+    }
+
+    private void paintSurfacesPartial(Framebuffer from, Framebuffer into, Matrix4f mv, Matrix4f p, LoadLightState state) {
+        RenderSystem.glUniform1i(this.uLightCount, state.lightCount);
+
+        MAT_BUF.clear();
+        ortho(0f, into.textureWidth, 0f, into.textureHeight, -1f, 1f).get(MAT_BUF);
+        MAT_BUF.rewind();
+        RenderSystem.glUniformMatrix4(this.uMvp, true, MAT_BUF);
+
+        RenderSystem.glUniform1i(this.uWidth, from.textureWidth);
+        RenderSystem.glUniform1i(this.uHeight, from.textureHeight);
+
+        RenderSystem.activeTexture(GL31.GL_TEXTURE0);
+        RenderSystem.enableTexture();
+        from.beginRead();
+        RenderSystem.glUniform1i(this.uWorld, 0);
+
         RenderSystem.viewport(0, 0, into.textureWidth, into.textureHeight);
 
+        into.setClearColor(0,0,0,0);
         into.clear(MinecraftClient.IS_SYSTEM_MAC);
         into.beginWrite(false);
         RenderSystem.depthMask(true);
@@ -326,22 +333,18 @@ public class PostProcess {
         BufferBuilder buf = Tessellator.getInstance().getBuffer();
         buf.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION);
         buf.vertex(0.0, 0.0, 0.0).next();
-        buf.vertex(0.0, into.textureHeight, 0.0).next();
-        buf.vertex(into.textureWidth, into.textureHeight, 0.0).next();
         buf.vertex(into.textureWidth, 0.0, 0.0).next();
+        buf.vertex(into.textureWidth, into.textureHeight, 0.0).next();
+        buf.vertex(0.0, into.textureHeight, 0.0).next();
         BufferRenderer.draw(buf.end());
 
         into.endWrite();
-        GlStateManager._glUseProgram(0);
-
         from.endRead();
 
         for (int i = 0; i < state.nextTexture; i += 1) {
             RenderSystem.activeTexture(GL31.GL_TEXTURE3 + i);
             RenderSystem.disableTexture();
         }
-
-        RenderSystem.activeTexture(GL31.GL_TEXTURE0);
     }
 
     private final class LoadLightState {
@@ -350,7 +353,7 @@ public class PostProcess {
         Identifier[] usedTextures = new Identifier[PostProcess.this.getMaxTextures()];
     }
 
-    private void loadLight(LoadLightState state, LightContainer l) {
+    private boolean loadLight(LoadLightState state, LightContainer l) {
         int color;
 
         for (color = 0; color < state.nextTexture; color += 1) {
@@ -360,11 +363,19 @@ public class PostProcess {
         }
 
         if (color == state.nextTexture) {
+            if (state.nextTexture + 2 >= state.usedTextures.length) {
+                return false;
+            }
+
             RenderSystem.activeTexture(GL31.GL_TEXTURE3 + color);
             RenderSystem.enableTexture();
             this.mc.getTextureManager().bindTexture(l.light().tex());
             state.usedTextures[color] = l.light().tex();
             state.nextTexture += 1;
+        } else {
+            if (state.nextTexture + 1 >= state.usedTextures.length) {
+                return false;
+            }
         }
 
         int depth = state.nextTexture;
@@ -385,9 +396,15 @@ public class PostProcess {
         GL31.glUniform3f(this.uLightPos[state.lightCount], lightPos.x(), lightPos.y(), lightPos.z());
 
         state.lightCount += 1;
+
+        return true;
     }
 
     private void blit(Framebuffer from, Framebuffer into) {
+        if (from == into) {
+            return;
+        }
+
         GlStateManager._glBindFramebuffer(GL31.GL_READ_FRAMEBUFFER, from.fbo);
         GlStateManager._glBindFramebuffer(GL31.GL_DRAW_FRAMEBUFFER, into.fbo);
         GlStateManager._glBlitFrameBuffer(
@@ -396,9 +413,9 @@ public class PostProcess {
                 from.textureWidth,
                 from.textureHeight,
                 0,
-                into.textureHeight,
-                into.textureWidth,
                 0,
+                into.textureWidth,
+                into.textureHeight,
                 GL31.GL_COLOR_BUFFER_BIT | GL31.GL_DEPTH_BUFFER_BIT,
                 GL31.GL_NEAREST
         );

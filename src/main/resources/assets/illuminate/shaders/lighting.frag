@@ -29,7 +29,6 @@ uniform mat4 screen2tex = mat4(
 
 uniform mat4 camInv;
 
-in vec2 _uv;
 in vec2 _xy;
 
 out vec4 color;
@@ -70,6 +69,9 @@ vec3 getNormal(in vec2 screen, in vec2 depthCoords) {
 }
 
 void main() {
+    // These coordinates are in pixels, so divide by window width/height
+    vec2 _uv = _xy / vec2(width, height);// * vec2(1, -1) + vec2(0, 1);
+
     // First, get the coordinates in the world of the fragment we're currently processing.
     float depthR = texture(depth, _uv).x;
     float depth = depthR * 2 - 1;

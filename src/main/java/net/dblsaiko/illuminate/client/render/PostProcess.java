@@ -32,6 +32,7 @@ public class PostProcess {
     private final Framebuffer target;
 
     private final SimpleFramebuffer offscreenFb;
+    private final SimpleFramebuffer offscreenFb2;
     private final LightFramebuffer lightDepthFb = new LightFramebuffer(1024, 1024, MinecraftClient.IS_SYSTEM_MAC);
     private int blitFb;
 
@@ -47,6 +48,9 @@ public class PostProcess {
         this.mc = mc;
         this.target = mc.getFramebuffer();
         this.offscreenFb = new SimpleFramebuffer(this.target.viewportWidth, this.target.viewportHeight, true, MinecraftClient.IS_SYSTEM_MAC);
+        this.offscreenFb2 = new SimpleFramebuffer(this.target.viewportWidth, this.target.viewportHeight, true, MinecraftClient.IS_SYSTEM_MAC);
+        this.offscreenFb.setClearColor(0, 0, 0, 0);
+        this.offscreenFb2.setClearColor(0, 0, 0, 0);
     }
 
     public int getMaxTextures() {
@@ -115,6 +119,8 @@ public class PostProcess {
         LightingShader shader = IlluminateClient.instance().shaders.lighting();
 
         if (shader != null) {
+            GlStateManager._glUseProgram(shader.id());
+
             for (int i = 0; i < shader.texTable.length(); i += 1) {
                 // These always have the same values, so set it here
                 RenderSystem.glUniform1i(shader.texTable.index(i), 3 + i);
@@ -136,6 +142,7 @@ public class PostProcess {
      */
     public void resize(int width, int height) {
         this.offscreenFb.resize(width, height, MinecraftClient.IS_SYSTEM_MAC);
+        this.offscreenFb2.resize(width, height, MinecraftClient.IS_SYSTEM_MAC);
     }
 
     public void renderLightDepths(float delta, long nanoTime, MatrixStack mv) {
@@ -208,23 +215,27 @@ public class PostProcess {
 
         mv.push();
         mv.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
-        var fb = this.paintSurfaces(this.target, mv.peek().getPositionMatrix(), p.peek().getPositionMatrix());
+        var lightFb = this.paintSurfaces(mv.peek().getPositionMatrix(), p.peek().getPositionMatrix());
         mv.pop();
-        this.blit(fb, this.target);
+
+        SimpleFramebuffer outFb = lightFb == this.offscreenFb ? this.offscreenFb2 : this.offscreenFb;
+        this.compose(this.target, lightFb, outFb);
+        this.blit(outFb, this.target);
 
         this.target.beginWrite(true);
     }
 
-    private Framebuffer paintSurfaces(Framebuffer from, Matrix4f mv, Matrix4f p) {
-        Framebuffer into = this.offscreenFb;
+    private Framebuffer paintSurfaces(Matrix4f mv, Matrix4f p) {
+        Framebuffer from = this.offscreenFb;
+        Framebuffer into = this.offscreenFb2;
+
+        from.clear(MinecraftClient.IS_SYSTEM_MAC);
 
         LightingShader shader = IlluminateClient.instance().shaders.lighting();
 
         if (shader == null) {
             throw new IllegalStateException("shader == null");
         }
-
-        from.endWrite();
 
         GlStateManager._glUseProgram(shader.id());
 
@@ -288,7 +299,6 @@ public class PostProcess {
 
         RenderSystem.viewport(0, 0, into.textureWidth, into.textureHeight);
 
-        into.setClearColor(0, 0, 0, 0);
         into.clear(MinecraftClient.IS_SYSTEM_MAC);
         into.beginWrite(false);
         RenderSystem.depthMask(true);
@@ -364,6 +374,50 @@ public class PostProcess {
         state.lightCount += 1;
 
         return true;
+    }
+
+    private void compose(Framebuffer color, Framebuffer light, Framebuffer into) {
+        ComposeShader shader = IlluminateClient.instance().shaders.compose();
+
+        GlStateManager._glUseProgram(shader.id());
+
+        new Matrix4f().get(MAT_BUF);
+        GlStateManager._glUniformMatrix4(shader.mvp.index(), false, MAT_BUF);
+
+        GlStateManager._activeTexture(GL31.GL_TEXTURE0);
+        GlStateManager._enableTexture();
+        color.beginRead();
+        GlStateManager._glUniform1i(shader.worldTex.index(), 0);
+
+        GlStateManager._activeTexture(GL31.GL_TEXTURE2);
+        GlStateManager._enableTexture();
+        light.beginRead();
+        GlStateManager._glUniform1i(shader.lightTex.index(), 2);
+
+        RenderSystem.viewport(0, 0, into.textureWidth, into.textureHeight);
+
+        into.clear(MinecraftClient.IS_SYSTEM_MAC);
+        into.beginWrite(false);
+        RenderSystem.depthMask(true);
+        RenderSystem.colorMask(true, true, true, true);
+
+        BufferBuilder buf = Tessellator.getInstance().getBuffer();
+        buf.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE);
+        buf.vertex(-1.0, -1.0, 0.0).texture(0, 0).next();
+        buf.vertex(1.0, -1.0, 0.0).texture(1, 0).next();
+        buf.vertex(1.0, 1.0, 0.0).texture(1, 1).next();
+        buf.vertex(-1.0, 1.0, 0.0).texture(0, 1).next();
+        BufferRenderer.draw(buf.end());
+
+        into.endWrite();
+
+        GlStateManager._activeTexture(GL31.GL_TEXTURE2);
+        light.endRead();
+
+        GlStateManager._activeTexture(GL31.GL_TEXTURE0);
+        color.endRead();
+
+        GlStateManager._glUseProgram(0);
     }
 
     private void blit(Framebuffer from, Framebuffer into) {
@@ -444,6 +498,7 @@ public class PostProcess {
         }
 
         this.offscreenFb.delete();
+        this.offscreenFb2.delete();
         this.lightDepthFb.delete();
         this.lights.values().forEach(LightContainer::destroy);
         this.lights.clear();

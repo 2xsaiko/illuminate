@@ -26,6 +26,7 @@ public final class Shaders {
     private final MinecraftClient mc;
 
     private LightingShader lighting;
+    private ComposeShader compose;
 
     public Shaders(IlluminateClient ic, MinecraftClient mc) {
         this.ic = ic;
@@ -59,9 +60,17 @@ public final class Shaders {
         return this.lighting;
     }
 
+    public ComposeShader compose() {
+        return this.compose;
+    }
+
     private void reloadShaders(ResourceManager rm) {
         if (this.lighting != null) {
             GlStateManager.glDeleteProgram(this.lighting.id());
+        }
+
+        if (this.compose != null) {
+            GlStateManager.glDeleteProgram(this.compose.id());
         }
 
         int lighting = this.loadShader(rm, "lighting");
@@ -69,6 +78,13 @@ public final class Shaders {
         if (lighting != 0) {
             this.lighting = new LightingShader(lighting);
             this.lighting.setup();
+        }
+
+        int compose = this.loadShader(rm, "compose");
+
+        if (compose != 0) {
+            this.compose = new ComposeShader(compose);
+            this.compose.setup();
         }
 
         GameRendererExt.from(this.mc.gameRenderer).postProcess().onShaderReload();

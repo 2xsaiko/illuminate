@@ -29,61 +29,59 @@ uniform mat4 screen2tex = mat4(
 
 uniform mat4 camInv;
 
-in vec2 _xy;
+in vec2 f_uv;
 
 out vec4 color;
 
 // Returns whether the specified (clip-space) position is inside the clip box, i.e. visible on screen.
 bool isInBox(in vec3 v) {
     return
-    v.x >= -1 && v.x <= 1 &&
-    v.y >= -1 && v.y <= 1 &&
-    v.z >= -1 && v.z <= 1;
+        v.x >= -1 && v.x <= 1 &&
+        v.y >= -1 && v.y <= 1 &&
+        v.z >= -1 && v.z <= 1;
+}
+
+vec2 uvToXy(in vec2 uv) {
+    return uv * 2 - 1;
 }
 
 // Calculates a position in the world from screen coordinates plus the associated value in the depth buffer.
 vec3 toWorldCoords(in vec2 screen, in float depth) {
-    vec4 c = vec4(screen.xy / vec2(width, height) * 2 - vec2(1, 1), depth, 1);
+    vec4 c = vec4(screen, depth, 1);
     vec4 r = camInv * c;
 
     return r.xyz / r.w;
 }
 
-// Calculates a position in the world from screen coordinates and the associated depth buffer coordinates.
-// (technically, the latter can be computed using the former, not sure whether it's faster to do so)
-vec3 toWorldCoords(in vec2 screen, in vec2 depthCoords) {
+// Calculates a position in the world from depth buffer coordinates.
+vec3 toWorldCoords(in vec2 depthCoords) {
     float d = texture(depth, depthCoords).x * 2 - 1;
-    return toWorldCoords(screen, d);
+    return toWorldCoords(uvToXy(depthCoords), d);
 }
 
 // Calculates the (world-space) normal vector for the specified position on screen. This samples the depth buffer
 // multiple times which introduces artifacts on sharp edges, but is realistically the best we can do from a
 // post-processing shader.
-vec3 getNormal(in vec2 screen, in vec2 depthCoords) {
+vec3 getNormal(in vec2 depthCoords) {
     vec2 scd = vec2(width, height);
-    vec3 a = toWorldCoords(screen + vec2( 1,  0), depthCoords + (vec2( 1,  0) / scd));
-    vec3 b = toWorldCoords(screen + vec2(-1, -1), depthCoords + (vec2(-1, -1) / scd));
-    vec3 c = toWorldCoords(screen + vec2(-1,  1), depthCoords + (vec2(-1,  1) / scd));
+    vec3 a = toWorldCoords(depthCoords + (vec2( 1,  0) / scd));
+    vec3 b = toWorldCoords(depthCoords + (vec2(-1, -1) / scd));
+    vec3 c = toWorldCoords(depthCoords + (vec2(-1,  1) / scd));
 
     return -normalize(cross(b - a, c - a));
 }
 
 void main() {
-    // These coordinates are in pixels, so divide by window width/height
-    vec2 _uv = _xy / vec2(width, height);// * vec2(1, -1) + vec2(0, 1);
-
     // First, get the coordinates in the world of the fragment we're currently processing.
-    float depthR = texture(depth, _uv).x;
-    float depth = depthR * 2 - 1;
-    vec3 worldCoords = toWorldCoords(_xy, depth);
+    vec3 worldCoords = toWorldCoords(f_uv);
 
     // The color of this fragment in the current screen buffer.
-    vec3 rgb = texture(world, _uv).xyz;
+    vec3 rgb = texture(world, f_uv).xyz;
 
     vec3 combinedLightColor = vec3(0);
 
     // The (world-space) normal vector of the current fragment.
-    vec3 normal = getNormal(_xy, _uv);
+    vec3 normal = getNormal(f_uv);
 
     for (int i = 0; i < lightCount; i++) {
         vec3 dir = lightPos[i] - worldCoords;

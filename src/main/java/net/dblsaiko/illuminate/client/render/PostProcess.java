@@ -324,18 +324,18 @@ public class PostProcess {
 
         RenderSystem.viewport(0, 0, into.textureWidth, into.textureHeight);
 
-        into.setClearColor(0,0,0,0);
+        into.setClearColor(0, 0, 0, 0);
         into.clear(MinecraftClient.IS_SYSTEM_MAC);
         into.beginWrite(false);
         RenderSystem.depthMask(true);
         RenderSystem.colorMask(true, true, true, true);
 
         BufferBuilder buf = Tessellator.getInstance().getBuffer();
-        buf.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION);
-        buf.vertex(0.0, 0.0, 0.0).next();
-        buf.vertex(into.textureWidth, 0.0, 0.0).next();
-        buf.vertex(into.textureWidth, into.textureHeight, 0.0).next();
-        buf.vertex(0.0, into.textureHeight, 0.0).next();
+        buf.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE);
+        buf.vertex(0.0, 0.0, 0.0).texture(0, 0).next();
+        buf.vertex(into.textureWidth, 0.0, 0.0).texture(1, 0).next();
+        buf.vertex(into.textureWidth, into.textureHeight, 0.0).texture(1, 1).next();
+        buf.vertex(0.0, into.textureHeight, 0.0).texture(0, 1).next();
         BufferRenderer.draw(buf.end());
 
         into.endWrite();

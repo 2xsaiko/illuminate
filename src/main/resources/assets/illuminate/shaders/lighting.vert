@@ -3,11 +3,11 @@
 uniform mat4 mvp;
 
 in vec4 vert;
+in vec2 uv;
 
-out vec2 _xy;
+out vec2 f_uv;
 
 void main() {
-    // Dividing by w shouldn't be necessary here since this is a post processing shader, but do it anyway just in case
-    _xy = vert.xy / vert.w;
+    f_uv = uv;
     gl_Position = mvp * vert;
 }

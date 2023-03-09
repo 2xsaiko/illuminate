@@ -47,8 +47,8 @@ public class PostProcess {
     public PostProcess(MinecraftClient mc) {
         this.mc = mc;
         this.target = mc.getFramebuffer();
-        this.offscreenFb = new SimpleFramebuffer(this.target.viewportWidth, this.target.viewportHeight, true, MinecraftClient.IS_SYSTEM_MAC);
-        this.offscreenFb2 = new SimpleFramebuffer(this.target.viewportWidth, this.target.viewportHeight, true, MinecraftClient.IS_SYSTEM_MAC);
+        this.offscreenFb = new HdrFramebuffer(this.target.viewportWidth, this.target.viewportHeight, true, MinecraftClient.IS_SYSTEM_MAC);
+        this.offscreenFb2 = new HdrFramebuffer(this.target.viewportWidth, this.target.viewportHeight, true, MinecraftClient.IS_SYSTEM_MAC);
         this.offscreenFb.setClearColor(0, 0, 0, 0);
         this.offscreenFb2.setClearColor(0, 0, 0, 0);
     }

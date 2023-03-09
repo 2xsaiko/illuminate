@@ -47,8 +47,8 @@ public class PostProcess {
     public PostProcess(MinecraftClient mc) {
         this.mc = mc;
         this.target = mc.getFramebuffer();
-        this.offscreenFb = new SimpleFramebuffer(this.target.viewportWidth, this.target.viewportHeight, true, MinecraftClient.IS_SYSTEM_MAC);
-        this.offscreenFb2 = new SimpleFramebuffer(this.target.viewportWidth, this.target.viewportHeight, true, MinecraftClient.IS_SYSTEM_MAC);
+        this.offscreenFb = new HdrFramebuffer(this.target.viewportWidth, this.target.viewportHeight, true, MinecraftClient.IS_SYSTEM_MAC);
+        this.offscreenFb2 = new HdrFramebuffer(this.target.viewportWidth, this.target.viewportHeight, true, MinecraftClient.IS_SYSTEM_MAC);
         this.offscreenFb.setClearColor(0, 0, 0, 0);
         this.offscreenFb2.setClearColor(0, 0, 0, 0);
     }
@@ -370,6 +370,8 @@ public class PostProcess {
 
         Vector3fc lightPos = l.light().pos();
         GL31.glUniform3f(shader.lightPos.index(state.lightCount), lightPos.x(), lightPos.y(), lightPos.z());
+
+        GL31.glUniform1f(shader.lightBrightness.index(state.lightCount), l.light().brightness());
 
         state.lightCount += 1;
 

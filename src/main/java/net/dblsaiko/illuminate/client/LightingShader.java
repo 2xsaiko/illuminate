@@ -16,6 +16,7 @@ public final class LightingShader extends Program {
     public final UniformArray lightDepth = this.uniformArray("lightDepth", this.maxLights);
     public final UniformArray lightCam = this.uniformArray("lightCam", this.maxLights);
     public final UniformArray lightPos = this.uniformArray("lightPos", this.maxLights);
+    public final UniformArray lightBrightness = this.uniformArray("lightBrightness", this.maxLights);
     public final ScalarUniform lightCount = this.uniform("lightCount");
     public final ScalarUniform camInv = this.uniform("camInv");
 

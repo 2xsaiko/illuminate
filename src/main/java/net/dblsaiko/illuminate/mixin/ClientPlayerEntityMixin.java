@@ -19,9 +19,8 @@ public abstract class ClientPlayerEntityMixin {
     @Inject(method = "isMainPlayer()Z", at = @At("HEAD"), cancellable = true)
     private void isMainPlayer(CallbackInfoReturnable<Boolean> cir) {
         // make our player render when the camera is a LightSource
-        if (this.client.getCameraEntity() instanceof LightSource) {
+        if (this.client.getCameraEntity() instanceof LightSource ls && ls.getLight().selfPlayerShadow()) {
             cir.setReturnValue(false);
-            cir.cancel();
         }
     }
 }

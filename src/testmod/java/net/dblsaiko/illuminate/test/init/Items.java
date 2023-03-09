@@ -9,14 +9,17 @@ import net.minecraft.registry.Registry;
 public final class Items {
     public final BlockItem projector;
     public final BlockItem light;
+    public final Item flashlight;
 
     public Items(Blocks blocks) {
         this.projector = new BlockItem(blocks.projector, new Item.Settings());
         this.light = new BlockItem(blocks.light, new Item.Settings());
+        this.flashlight = new Item(new Item.Settings());
     }
 
     public void register() {
         Registry.register(Registries.ITEM, IlluminateTest.id("projector"), this.projector);
         Registry.register(Registries.ITEM, IlluminateTest.id("light"), this.light);
+        Registry.register(Registries.ITEM, IlluminateTest.id("flashlight"), this.flashlight);
     }
 }

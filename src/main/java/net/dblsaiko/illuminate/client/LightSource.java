@@ -8,8 +8,11 @@ import net.minecraft.world.World;
 import org.joml.Vector3fc;
 
 public class LightSource extends Entity {
+    private final Light light;
+
     public LightSource(World world, Light light) {
         super(Illuminate.instance().entityTypes.lightSourceType(), world);
+        this.light = light;
 
         Vector3fc lightPos = light.pos();
         this.setPosition(lightPos.x(), lightPos.y(), lightPos.z());
@@ -24,6 +27,10 @@ public class LightSource extends Entity {
         this.lastRenderY = this.getX();
         this.lastRenderZ = this.getZ();
 
+    }
+
+    public Light getLight() {
+        return light;
     }
 
     @Override

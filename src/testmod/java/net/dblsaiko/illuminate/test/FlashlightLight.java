@@ -52,9 +52,13 @@ public class FlashlightLight implements Light {
     }
 
     @Override
-    public float brightness()
-    {
+    public float brightness() {
         return 64;
+    }
+
+    @Override
+    public boolean selfPlayerShadow() {
+        return false;
     }
 
     @Override
